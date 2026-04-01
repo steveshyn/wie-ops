@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: wie-ops
+    env: static
+    buildCommand: npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://wie-v27l.onrender.com
+      - key: VITE_OPS_PASSWORD
+        sync: false
