@@ -89,6 +89,12 @@ export const createProducer = (data) =>
 // Vintage heat map
 export const getVintageHeatMap = () => apiFetch('/ops/wiqs/vintage-heat-map')
 
+// All wines with latest WIQS scores (catalog)
+export const getWIQSScores = () => apiFetch('/ops/wiqs/scores')
+
+// Denomination tiers (read-only)
+export const getDenominationTiers = () => apiFetch('/ops/lookup/denomination-tiers')
+
 // Wine search
 export const searchWines = (q) =>
   apiFetch(`/wines/search?q=${encodeURIComponent(q)}`)
