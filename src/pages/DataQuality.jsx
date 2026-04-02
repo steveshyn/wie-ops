@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   getQualityIssues, getRegions,
   updateWineRegion, updateWineTier, recomputeWine,
+  createSubregion,
 } from '../api/client'
 import Badge          from '../components/Badge'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -136,7 +137,7 @@ export default function DataQuality() {
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  {tab === 'p1' && <P1Row wine={wine} onFix={() => setPanel(issueForMode(wine))} />}
+                  {tab === 'p1' && <P1Row wine={wine} onFix={() => setPanel(issueForMode(wine))} onAddSubregion={() => setPanel({ wine, mode: 'add_subregion' })} />}
                   {tab === 'confidence' && <ConfRow wine={wine} onReview={() => setPanel(issueForMode(wine))} />}
                   {tab === 'anomaly' && <AnomalyRow wine={wine} onFix={() => setPanel(issueForMode(wine))} />}
                 </tr>
@@ -179,7 +180,7 @@ function P1Headers({ sortDir, setSortDir }) {
     <TH onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}>
       Score {sortDir === 'desc' ? '↓' : '↑'}
     </TH>
-    <TH>P1</TH><TH>Action</TH>
+    <TH>P1</TH><TH>Reason</TH><TH>Action</TH>
   </>
 }
 function ConfHeaders({ sortDir, setSortDir }) {
@@ -212,26 +213,30 @@ const ScoreCell = ({ score }) => {
   return <TD><span style={{ color: c.text, fontWeight: 600 }}>{fmtScore(score)}</span></TD>
 }
 
-const ActionBtn = ({ label, onClick }) => (
-  <TD>
-    <button
-      onClick={onClick}
-      style={{
-        padding: '4px 10px', fontSize: 11, fontWeight: 500,
-        background: 'transparent', border: '1px solid var(--gold)',
-        borderRadius: 3, color: 'var(--gold)', cursor: 'pointer',
-        transition: 'background 120ms',
-      }}
-      onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,168,76,0.08)'}
-      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-    >
-      {label}
-    </button>
-  </TD>
+const ActionBtnInline = ({ label, onClick }) => (
+  <button
+    onClick={onClick}
+    style={{
+      padding: '4px 10px', fontSize: 11, fontWeight: 500,
+      background: 'transparent', border: '1px solid var(--gold)',
+      borderRadius: 3, color: 'var(--gold)', cursor: 'pointer',
+      transition: 'background 120ms', whiteSpace: 'nowrap',
+    }}
+    onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,168,76,0.08)'}
+    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+  >
+    {label}
+  </button>
 )
 
-function P1Row({ wine, onFix }) {
+const ActionBtn = ({ label, onClick }) => (
+  <TD><ActionBtnInline label={label} onClick={onClick} /></TD>
+)
+
+function P1Row({ wine, onFix, onAddSubregion }) {
   const isP1Miss = wine.p1_site_terroir === 10.0 || wine.p1_site_terroir === '10.0'
+  const reason = wine.p1_miss_reason ?? ''
+  const isMissingLookup = reason.includes('not in subregion lookup')
   return <>
     <TD><span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>{wine.wine_name}</span></TD>
     <TD style={{ color: 'var(--text-dim)' }}>{wine.producer_name}</TD>
@@ -243,7 +248,15 @@ function P1Row({ wine, onFix }) {
         {fmtScore(wine.p1_site_terroir)}
       </span>
     </TD>
-    <ActionBtn label="Fix Region" onClick={onFix} />
+    <TD style={{ color: 'var(--amber)', fontSize: 11, maxWidth: 200 }}>{reason}</TD>
+    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <ActionBtnInline label="Fix Region" onClick={onFix} />
+        {isMissingLookup && (
+          <ActionBtnInline label="Add Subregion" onClick={onAddSubregion} />
+        )}
+      </div>
+    </td>
   </>
 }
 
@@ -286,6 +299,10 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
   const [recomputing,    setRecomputing]    = useState(false)
   const [newScore,       setNewScore]       = useState(null)
 
+  // Add subregion mode
+  const [qualityScore, setQualityScore] = useState('')
+  const [subNotes,     setSubNotes]     = useState('')
+
   // Group regions by country
   const byCountry = regions.reduce((acc, r) => {
     const c = r.country || 'Unknown'
@@ -296,21 +313,34 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
   const countries = Object.keys(byCountry).sort()
 
   const handleSave = async () => {
-    if (!reason.trim() || reason.trim().length < 10) {
-      setSaveError('Reason must be at least 10 characters.')
-      return
-    }
     setSaveError('')
     setSaving(true)
     try {
-      if (mode === 'region') {
-        if (!selectedRegion) { setSaveError('Select a region.'); setSaving(false); return }
-        await updateWineRegion(wine.wine_family_id, parseInt(selectedRegion), reason)
+      if (mode === 'add_subregion') {
+        const score = parseFloat(qualityScore)
+        if (isNaN(score) || score < 0 || score > 25) {
+          setSaveError('Quality score must be 0–25.'); setSaving(false); return
+        }
+        await createSubregion({
+          subregion_name: wine.region_name,
+          country: wine.country || 'Unknown',
+          quality_score: score,
+          notes: subNotes.trim() || null,
+        })
+        setUpdated(true)
       } else {
-        if (!selectedTier) { setSaveError('Select a tier.'); setSaving(false); return }
-        await updateWineTier(wine.wine_family_id, selectedTier, reason)
+        if (!reason.trim() || reason.trim().length < 10) {
+          setSaveError('Reason must be at least 10 characters.'); setSaving(false); return
+        }
+        if (mode === 'region') {
+          if (!selectedRegion) { setSaveError('Select a region.'); setSaving(false); return }
+          await updateWineRegion(wine.wine_family_id, parseInt(selectedRegion), reason)
+        } else {
+          if (!selectedTier) { setSaveError('Select a tier.'); setSaving(false); return }
+          await updateWineTier(wine.wine_family_id, selectedTier, reason)
+        }
+        setUpdated(true)
       }
-      setUpdated(true)
     } catch (err) {
       setSaveError(err.message)
     } finally {
@@ -322,7 +352,7 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
     setRecomputing(true)
     setSaveError('')
     try {
-      const result = await recomputeWine(wine.wine_family_id, mode === 'region' ? 'region_fix' : 'tier_fix')
+      const result = await recomputeWine(wine.wine_family_id, mode === 'add_subregion' ? 'subregion_added' : mode === 'region' ? 'region_fix' : 'tier_fix')
       setNewScore(result)
       onFixed()
     } catch (err) {
@@ -384,7 +414,40 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
 
         {/* Body */}
         <div style={{ padding: '24px', flex: 1 }}>
-          {mode === 'region' ? (
+          {mode === 'add_subregion' ? (
+            <>
+              <Field label="Subregion Name">
+                <span style={{ color: 'var(--text)', fontWeight: 600 }}>{wine.region_name}</span>
+              </Field>
+
+              <Field label="Country">
+                <span style={{ color: 'var(--text)' }}>{wine.country || 'Unknown'}</span>
+              </Field>
+
+              <Field label="Quality Score (0–25)">
+                <input
+                  type="number"
+                  min="0" max="25" step="0.5"
+                  value={qualityScore}
+                  onChange={e => setQualityScore(e.target.value)}
+                  disabled={updated}
+                  placeholder="e.g. 18.0"
+                  style={{ width: '100%' }}
+                />
+              </Field>
+
+              <Field label="Notes (optional)">
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Sonoma County AVA"
+                  value={subNotes}
+                  onChange={e => setSubNotes(e.target.value)}
+                  disabled={updated}
+                  style={{ resize: 'vertical', minHeight: 48 }}
+                />
+              </Field>
+            </>
+          ) : mode === 'region' ? (
             <>
               <Field label="Current Region">
                 <span style={{ color: 'var(--text)' }}>{wine.region_name}</span>
@@ -429,16 +492,18 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
             </>
           )}
 
-          <Field label="Reason (required)">
-            <textarea
-              rows={3}
-              placeholder="Minimum 10 characters…"
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              disabled={updated}
-              style={{ resize: 'vertical', minHeight: 72 }}
-            />
-          </Field>
+          {mode !== 'add_subregion' && (
+            <Field label="Reason (required)">
+              <textarea
+                rows={3}
+                placeholder="Minimum 10 characters…"
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                disabled={updated}
+                style={{ resize: 'vertical', minHeight: 72 }}
+              />
+            </Field>
+          )}
 
           {saveError && (
             <div style={{
@@ -464,7 +529,7 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
               }}
             >
               {saving && <LoadingSpinner size="sm" />}
-              {mode === 'region' ? 'Update Region' : 'Update Tier'}
+              {mode === 'add_subregion' ? 'Add Subregion' : mode === 'region' ? 'Update Region' : 'Update Tier'}
             </button>
           ) : (
             <div>
@@ -475,7 +540,7 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                {mode === 'region' ? 'Region updated' : 'Tier updated'}
+                {mode === 'add_subregion' ? 'Subregion added' : mode === 'region' ? 'Region updated' : 'Tier updated'}
               </div>
 
               {newScore ? (
