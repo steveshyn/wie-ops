@@ -176,7 +176,7 @@ const TH = ({ children, onClick, style = {} }) => (
 
 function P1Headers({ sortDir, setSortDir }) {
   return <>
-    <TH>Wine</TH><TH>Producer</TH><TH>Region</TH><TH>Tier</TH>
+    <TH>Wine</TH><TH>Producer</TH><TH>Country</TH><TH>State</TH><TH>Region</TH><TH>Tier</TH>
     <TH onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}>
       Score {sortDir === 'desc' ? '↓' : '↑'}
     </TH>
@@ -240,6 +240,8 @@ function P1Row({ wine, onFix, onAddSubregion }) {
   return <>
     <TD><span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>{wine.wine_name}</span></TD>
     <TD style={{ color: 'var(--text-dim)' }}>{wine.producer_name}</TD>
+    <TD style={{ color: 'var(--text-dim)' }}>{wine.country || '—'}</TD>
+    <TD style={{ color: 'var(--text-dim)' }}>{wine.state || '—'}</TD>
     <TD style={{ color: 'var(--text-dim)' }}>{wine.region_name}</TD>
     <TD><Badge tier={wine.production_tier} /></TD>
     <ScoreCell score={wine.wiqs_score} />
