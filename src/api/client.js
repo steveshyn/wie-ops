@@ -135,3 +135,88 @@ export const getMatchScore = (customerId, wineFamilyId, vintageYear = null) =>
       vintage_year:   vintageYear,
     }),
   })
+
+// ARCH-002 — Admin / Data Management
+
+export const getAdminFamilies = (params = {}) => {
+  const sp = new URLSearchParams()
+  if (params.q)       sp.set('q',       params.q)
+  if (params.country) sp.set('country', params.country)
+  if (params.region)  sp.set('region',  params.region)
+  if (params.tier)    sp.set('tier',    params.tier)
+  if (params.lwin)    sp.set('lwin',    params.lwin)
+  if (params.sort)    sp.set('sort',    params.sort)
+  sp.set('limit',  String(params.limit  ?? 50))
+  sp.set('offset', String(params.offset ?? 0))
+  return apiFetch(`/admin/families?${sp.toString()}`)
+}
+
+export const getAdminFamily = (wineFamilyId) =>
+  apiFetch(`/admin/families/${wineFamilyId}`)
+
+export const updateAdminFamily = (wineFamilyId, fields, note) =>
+  apiFetch(`/admin/families/${wineFamilyId}`, {
+    method: 'PUT',
+    body:   JSON.stringify({ fields, note }),
+  })
+
+export const retireFamily = (wineFamilyId, reason, confirm = false) =>
+  apiFetch(`/admin/families/${wineFamilyId}/retire?confirm=${confirm}`, {
+    method: 'POST',
+    body:   JSON.stringify({ reason }),
+  })
+
+export const unretireFamily = (wineFamilyId, note) =>
+  apiFetch(`/admin/families/${wineFamilyId}/unretire`, {
+    method: 'POST',
+    body:   JSON.stringify({ note }),
+  })
+
+export const recomputeFamily = (wineFamilyId, note, operator = 'steve') =>
+  apiFetch(`/admin/recompute/${wineFamilyId}`, {
+    method: 'POST',
+    body:   JSON.stringify({ note, operator }),
+  })
+
+export const recomputeRegion = (region, note, operator = 'steve') =>
+  apiFetch('/admin/recompute/region', {
+    method: 'POST',
+    body:   JSON.stringify({ region, note, operator }),
+  })
+
+export const overridePillar = (wineVintageId, pillar, value, note) =>
+  apiFetch('/admin/override/pillar', {
+    method: 'POST',
+    body:   JSON.stringify({
+      wine_vintage_id: wineVintageId,
+      pillar,
+      override_value:  Number(value),
+      note,
+    }),
+  })
+
+export const deletePillarOverride = (overrideId, note) =>
+  apiFetch(`/admin/override/pillar/${overrideId}`, {
+    method: 'DELETE',
+    body:   JSON.stringify({ note }),
+  })
+
+export const overridePrestige = (wineFamilyId, score, tier, note) =>
+  apiFetch('/admin/override/prestige', {
+    method: 'POST',
+    body:   JSON.stringify({
+      wine_family_id: wineFamilyId,
+      prestige_score: Number(score),
+      tier,
+      note,
+    }),
+  })
+
+export const getPillarOverrides = () =>
+  apiFetch('/admin/overrides/pillars')
+
+export const getPrestigeOverrides = () =>
+  apiFetch('/admin/overrides/prestige')
+
+export const getAdminHealth = () =>
+  apiFetch('/admin/health')
