@@ -98,3 +98,15 @@ export const getDenominationTiers = () => apiFetch('/ops/lookup/denomination-tie
 // Wine search
 export const searchWines = (q) =>
   apiFetch(`/wines/search?q=${encodeURIComponent(q)}`)
+
+// ARCH-001 Audit log
+export const getAuditLog = ({ tableName, operator, limit = 50, offset = 0 } = {}) => {
+  const params = new URLSearchParams()
+  if (tableName) params.set('table_name', tableName)
+  if (operator)  params.set('operator',   operator)
+  params.set('limit',  String(limit))
+  params.set('offset', String(offset))
+  return apiFetch(`/ops/audit?${params.toString()}`)
+}
+
+export const getAuditTables = () => apiFetch('/ops/audit/tables')

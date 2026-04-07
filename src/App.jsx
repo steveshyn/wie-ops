@@ -8,6 +8,7 @@ import WIQSScores    from './pages/WIQSScores'
 import VintageHeatMap from './pages/VintageHeatMap'
 import LookupTables  from './pages/LookupTables'
 import AnnualVintage from './pages/AnnualVintage'
+import AuditLog      from './pages/AuditLog'
 
 function ProtectedRoute({ title, children }) {
   const { isAuthed, logout } = useAuth()
@@ -48,6 +49,11 @@ export default function App() {
         <Route path="/vintage" element={
           <ProtectedRoute title="Annual Vintage">
             <AnnualVintage />
+          </ProtectedRoute>
+        } />
+        <Route path="/audit" element={
+          <ProtectedRoute title="Audit Log">
+            <AuditLog />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
