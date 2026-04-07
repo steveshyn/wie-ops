@@ -110,3 +110,28 @@ export const getAuditLog = ({ tableName, operator, limit = 50, offset = 0 } = {}
 }
 
 export const getAuditTables = () => apiFetch('/ops/audit/tables')
+
+// Phase 3 — Customer Layer
+export const getCustomerProfile = (customerId) =>
+  apiFetch(`/recommend/profile/${encodeURIComponent(customerId)}`)
+
+export const getRecommendations = (customerId, limit = 10, context = null, minWiqs = 55.0) =>
+  apiFetch('/recommend', {
+    method: 'POST',
+    body: JSON.stringify({
+      customer_id: customerId,
+      limit,
+      min_wiqs: minWiqs,
+      context,
+    }),
+  })
+
+export const getMatchScore = (customerId, wineFamilyId, vintageYear = null) =>
+  apiFetch('/recommend/match', {
+    method: 'POST',
+    body: JSON.stringify({
+      customer_id:    customerId,
+      wine_family_id: wineFamilyId,
+      vintage_year:   vintageYear,
+    }),
+  })

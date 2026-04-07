@@ -9,6 +9,7 @@ import VintageHeatMap from './pages/VintageHeatMap'
 import LookupTables  from './pages/LookupTables'
 import AnnualVintage from './pages/AnnualVintage'
 import AuditLog      from './pages/AuditLog'
+import CustomerLayer from './pages/CustomerLayer'
 
 function ProtectedRoute({ title, children }) {
   const { isAuthed, logout } = useAuth()
@@ -54,6 +55,11 @@ export default function App() {
         <Route path="/audit" element={
           <ProtectedRoute title="Audit Log">
             <AuditLog />
+          </ProtectedRoute>
+        } />
+        <Route path="/customers" element={
+          <ProtectedRoute title="Customer Layer">
+            <CustomerLayer />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
