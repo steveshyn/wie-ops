@@ -8,9 +8,11 @@ import WIQSScores    from './pages/WIQSScores'
 import VintageHeatMap from './pages/VintageHeatMap'
 import LookupTables  from './pages/LookupTables'
 import AnnualVintage from './pages/AnnualVintage'
-import AuditLog       from './pages/AuditLog'
-import CustomerLayer  from './pages/CustomerLayer'
-import CatalogBrowser from './pages/CatalogBrowser'
+import AuditLog        from './pages/AuditLog'
+import CustomerLayer   from './pages/CustomerLayer'
+import CatalogBrowser  from './pages/CatalogBrowser'
+import HealthDashboard from './pages/HealthDashboard'
+import OverrideQueue   from './pages/OverrideQueue'
 
 function ProtectedRoute({ title, children }) {
   const { isAuthed, logout } = useAuth()
@@ -66,6 +68,16 @@ export default function App() {
         <Route path="/catalog" element={
           <ProtectedRoute title="Catalog">
             <CatalogBrowser />
+          </ProtectedRoute>
+        } />
+        <Route path="/health" element={
+          <ProtectedRoute title="Data Health">
+            <HealthDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/overrides" element={
+          <ProtectedRoute title="Override Queue">
+            <OverrideQueue />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />

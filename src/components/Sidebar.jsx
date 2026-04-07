@@ -84,6 +84,24 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    to: '/health', label: 'Data Health',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+    ),
+  },
+  {
+    to: '/overrides', label: 'Override Queue',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M3 6h18"/>
+        <path d="M7 12h10"/>
+        <path d="M10 18h4"/>
+      </svg>
+    ),
+  },
 ]
 
 export default function Sidebar({ onLogout }) {
