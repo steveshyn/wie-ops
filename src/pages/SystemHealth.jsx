@@ -8,6 +8,7 @@ import StatCard      from '../components/StatCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { TIER_COLORS, scoreToColor } from '../utils/tierColors'
 import { fmtScore, fmtPct, fmtCount } from '../utils/formatters'
+import AskWine from '../components/AskWine'
 
 const TIER_ORDER = ['exceptional', 'distinguished', 'quality', 'standard', 'basic']
 
@@ -285,6 +286,9 @@ export default function SystemHealth() {
           </div>
         </>
       )}
+
+      {/* ASK WINE */}
+      <AskWine />
     </div>
   )
 }

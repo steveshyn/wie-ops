@@ -232,3 +232,10 @@ export const getLwinCoverage = () =>
 // Data health extended (tasting model flags)
 export const getDataHealthExtended = () =>
   apiFetch('/admin/data-health/extended')
+
+// Ask WINE — natural language query
+export const askWine = (question, format = 'table') =>
+  apiFetch('/admin/ask', {
+    method: 'POST',
+    body: JSON.stringify({ question, format }),
+  })
