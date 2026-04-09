@@ -220,3 +220,15 @@ export const getPrestigeOverrides = () =>
 
 export const getAdminHealth = () =>
   apiFetch('/admin/health')
+
+// Tasting Model dashboard
+export const getTastingModelDashboard = () =>
+  apiFetch('/admin/tasting-model/dashboard')
+
+// LWIN coverage
+export const getLwinCoverage = () =>
+  apiFetch('/admin/lwin/coverage')
+
+// Data health extended (tasting model flags)
+export const getDataHealthExtended = () =>
+  apiFetch('/admin/data-health/extended')

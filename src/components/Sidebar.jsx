@@ -45,6 +45,15 @@ const NAV = [
     ),
   },
   {
+    to: '/lwin', label: 'LWIN Coverage',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>
+    ),
+  },
+  {
     to: '/vintage', label: 'Annual Vintage',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -70,6 +79,16 @@ const NAV = [
         <polyline points="14 2 14 8 20 8"/>
         <line x1="9" y1="13" x2="15" y2="13"/>
         <line x1="9" y1="17" x2="15" y2="17"/>
+      </svg>
+    ),
+  },
+  {
+    to: '/tasting', label: 'Tasting Model',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M8 21h8"/>
+        <path d="M12 15v6"/>
+        <path d="M17.5 8c0 3.04-2.46 5.5-5.5 5.5S6.5 11.04 6.5 8c0-3.04 1-6 5.5-6s5.5 2.96 5.5 6z"/>
       </svg>
     ),
   },

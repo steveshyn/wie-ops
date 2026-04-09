@@ -13,6 +13,8 @@ import CustomerLayer   from './pages/CustomerLayer'
 import CatalogBrowser  from './pages/CatalogBrowser'
 import HealthDashboard from './pages/HealthDashboard'
 import OverrideQueue   from './pages/OverrideQueue'
+import TastingModel    from './pages/TastingModel'
+import LwinCoverage    from './pages/LwinCoverage'
 
 function ProtectedRoute({ title, children }) {
   const { isAuthed, logout } = useAuth()
@@ -78,6 +80,16 @@ export default function App() {
         <Route path="/overrides" element={
           <ProtectedRoute title="Override Queue">
             <OverrideQueue />
+          </ProtectedRoute>
+        } />
+        <Route path="/tasting" element={
+          <ProtectedRoute title="Tasting Model">
+            <TastingModel />
+          </ProtectedRoute>
+        } />
+        <Route path="/lwin" element={
+          <ProtectedRoute title="LWIN Coverage">
+            <LwinCoverage />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />

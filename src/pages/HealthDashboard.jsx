@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
 } from 'recharts'
-import { getAdminHealth } from '../api/client'
+import { getAdminHealth, getDataHealthExtended } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import StatCard from '../components/StatCard'
 
@@ -70,6 +70,7 @@ function OperatorChip({ operator, count }) {
 export default function HealthDashboard() {
   const navigate = useNavigate()
   const [health, setHealth] = useState(null)
+  const [extHealth, setExtHealth] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lastRefresh, setLastRefresh] = useState(null)
@@ -77,8 +78,12 @@ export default function HealthDashboard() {
   const fetchHealth = useCallback(async () => {
     setError(null)
     try {
-      const h = await getAdminHealth()
+      const [h, ext] = await Promise.all([
+        getAdminHealth(),
+        getDataHealthExtended().catch(() => null),
+      ])
       setHealth(h)
+      setExtHealth(ext)
       setLastRefresh(new Date())
     } catch (err) {
       setError(err.message || 'Failed to load health data')
@@ -291,6 +296,114 @@ export default function HealthDashboard() {
           </div>
         </div>
       </Card>
+
+      {/* SECTION 5 — Tasting Model Health (extended data health) */}
+      {extHealth && (
+        <>
+          <div style={{
+            fontSize: 14, fontWeight: 600, color: 'var(--text)',
+            paddingTop: 12, borderTop: '1px solid var(--border)',
+            marginTop: 4,
+          }}>
+            Tasting Model Health
+          </div>
+
+          {/* Vector Enrichment Needed */}
+          {(extHealth.vector_enrichment_needed || []).length > 0 && (
+            <div style={{
+              background: 'rgba(245,158,11,0.08)',
+              border: '1px solid var(--amber)',
+              borderRadius: 8, padding: '16px 20px',
+            }}>
+              <div style={{
+                fontSize: 13, fontWeight: 600, color: 'var(--amber)', marginBottom: 12,
+              }}>
+                {extHealth.vector_enrichment_needed.length} wines have scored vintages but no vector enrichment.
+                These are invisible to the recommender and need enrichment to reflect true quality.
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(245,158,11,0.3)' }}>
+                    {['Producer', 'Wine', 'Current WIQS', 'Flag'].map(h => (
+                      <th key={h} style={{
+                        textAlign: 'left', padding: '6px 8px', fontSize: 10,
+                        fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+                        color: 'var(--text-dim)',
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {extHealth.vector_enrichment_needed.map((v, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(245,158,11,0.15)' }}>
+                      <td style={{ padding: '8px', color: 'var(--text)' }}>{v.producer}</td>
+                      <td style={{ padding: '8px', color: 'var(--text-dim)' }}>{v.wine_name}</td>
+                      <td style={{ padding: '8px', color: 'var(--amber)', fontWeight: 600 }}>
+                        {v.wiqs_score != null ? Number(v.wiqs_score).toFixed(1) : '—'}
+                      </td>
+                      <td style={{ padding: '8px' }}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+                          background: 'rgba(245,158,11,0.15)', color: 'var(--amber)',
+                        }}>
+                          {v.flag}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Missing LWIN7 + No Archetype row */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 16,
+          }}>
+            <StatCard
+              title="Missing LWIN7"
+              value={extHealth.missing_lwin7}
+              subtitle="Run LWIN matching pipeline to improve coverage"
+              accent="var(--amber)"
+            />
+            <Card title="Unclassified Archetypes">
+              {(extHealth.no_archetype || []).length === 0 ? (
+                <div style={{
+                  fontSize: 12, color: 'var(--green-light)',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  <span style={{ fontSize: 14 }}>&#10003;</span>
+                  All rollup wines have archetype assignments
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Producer', 'Wine'].map(h => (
+                        <th key={h} style={{
+                          textAlign: 'left', padding: '6px 8px', fontSize: 10,
+                          fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+                          color: 'var(--text-dim)',
+                        }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(extHealth.no_archetype || []).map((n, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '8px', color: 'var(--text)' }}>{n.producer}</td>
+                        <td style={{ padding: '8px', color: 'var(--text-dim)' }}>{n.wine_name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   )
 }
