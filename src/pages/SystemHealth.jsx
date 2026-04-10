@@ -31,7 +31,7 @@ export default function SystemHealth() {
       const [h, s, q] = await Promise.all([
         getHealth(),
         getCatalogStats(),
-        getQualityIssues(),
+        getQualityIssues().catch(() => ({ p1_misses: [], low_confidence: [], tier_anomalies: [] })),
       ])
       setApiMs(Date.now() - t0)
       setApiOnline(true)
