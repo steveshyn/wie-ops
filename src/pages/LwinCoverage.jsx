@@ -58,6 +58,7 @@ export default function LwinCoverage() {
   const [error, setError] = useState(null)
 
   const fetchData = useCallback(async () => {
+    setLoading(true)
     setError(null)
     try {
       const d = await getLwinCoverage()
@@ -200,6 +201,11 @@ export default function LwinCoverage() {
 
         {/* RIGHT: Unmatched Sample */}
         <Card title="Unmatched Sample">
+          {(data.unmatched_sample || []).length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
+              No unmatched samples
+            </div>
+          ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -227,6 +233,7 @@ export default function LwinCoverage() {
               ))}
             </tbody>
           </table>
+          )}
           <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 12, fontStyle: 'italic' }}>
             Sample of unmatched families. Full list available via LWIN matching pipeline.
           </div>

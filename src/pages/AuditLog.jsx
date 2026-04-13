@@ -212,6 +212,8 @@ export default function AuditLog() {
         operator:  filterOperator || undefined,
         limit:     PAGE_SIZE,
         offset:    page * PAGE_SIZE,
+        from_date: filterFrom || undefined,
+        to_date:   filterTo || undefined,
       })
       setRows(data.rows || [])
       setTotal(data.total || 0)
@@ -222,7 +224,7 @@ export default function AuditLog() {
     } finally {
       setLoading(false)
     }
-  }, [filterOperator, filterTable, page])
+  }, [filterOperator, filterTable, filterFrom, filterTo, page])
 
   const fetchTables = useCallback(async () => {
     try {
@@ -237,7 +239,7 @@ export default function AuditLog() {
   useEffect(() => { fetchTables() }, [fetchTables])
 
   // Reset page when filters change
-  useEffect(() => { setPage(0) }, [filterOperator, filterTable])
+  useEffect(() => { setPage(0) }, [filterOperator, filterTable, filterFrom, filterTo, search])
 
   // Client-side date + search filter on the loaded page
   const visibleRows = useMemo(() => {

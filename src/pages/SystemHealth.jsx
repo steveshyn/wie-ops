@@ -64,7 +64,7 @@ export default function SystemHealth() {
         .map(t => ({
           tier:  t,
           count: stats.tier_distribution[t] || 0,
-          pct:   ((stats.tier_distribution[t] || 0) / stats.wiqs_scored_count * 100).toFixed(1),
+          pct:   ((stats.tier_distribution[t] || 0) / (stats.wiqs_scored_count || 1) * 100).toFixed(1),
         }))
     : []
 
@@ -174,7 +174,7 @@ export default function SystemHealth() {
             <StatCard
               title="Vectors"
               value={fmtCount(stats.total_vectors)}
-              subtitle={`${((stats.total_vectors / stats.total_vintages) * 100).toFixed(0)}% of vintages`}
+              subtitle={`${((stats.total_vectors / (stats.total_vintages || 1)) * 100).toFixed(0)}% of vintages`}
             />
             <StatCard
               title="WIQS Scored"
@@ -245,14 +245,14 @@ export default function SystemHealth() {
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <QualityRow
                   label="P1 Misses"
-                  value={stats.p1_miss_count}
-                  warn={stats.p1_miss_count > 0}
+                  value={issues?.p1_misses?.length ?? 0}
+                  warn={(issues?.p1_misses?.length ?? 0) > 0}
                   warnLevel="amber"
                 />
                 <QualityRow
                   label="Low Confidence"
-                  value={stats.low_confidence_count}
-                  warn={stats.low_confidence_count > 0}
+                  value={issues?.low_confidence?.length ?? 0}
+                  warn={(issues?.low_confidence?.length ?? 0) > 0}
                   warnLevel="amber"
                 />
                 <QualityRow

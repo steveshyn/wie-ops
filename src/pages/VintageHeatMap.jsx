@@ -101,7 +101,14 @@ export default function VintageHeatMap() {
   const [drawerOpen,    setDrawerOpen]    = useState(false)
 
   const { data: heatmapRes, loading: hmLoading } = useAPI(getVintageHeatMap)
-  const { data: scoresRes }                       = useAPI(getWIQSScores)
+  const { data: scoresRes, loading: scoresLoading } = useAPI(getWIQSScores)
+
+  // Close drawer on Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') setDrawerOpen(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
 
   const rawData = heatmapRes?.data ?? []
   const allWines = scoresRes?.wines ?? []
@@ -192,7 +199,7 @@ export default function VintageHeatMap() {
   const drawerWines = useMemo(() => {
     if (!selectedCell) return []
     return allWines
-      .filter(w => w.region_name === selectedCell.region)
+      .filter(w => w.region_name === selectedCell.region && w.vintage_year === selectedCell.year)
       .sort((a, b) => (b.wiqs_score ?? 0) - (a.wiqs_score ?? 0))
   }, [selectedCell, allWines])
 
@@ -570,8 +577,10 @@ export default function VintageHeatMap() {
             <div style={{ fontSize: 11, color: '#555', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
               Wines in {selectedCell.region}
             </div>
-            {drawerWines.length === 0 ? (
-              <div style={{ color: '#555', fontSize: 12, padding: '20px 0' }}>No scored wines found.</div>
+            {scoresLoading ? (
+              <div style={{ color: '#555', fontSize: 12, padding: '20px 0', textAlign: 'center' }}><LoadingSpinner size="sm" /> Loading wines…</div>
+            ) : drawerWines.length === 0 ? (
+              <div style={{ color: '#555', fontSize: 12, padding: '20px 0' }}>No scored wines found for this vintage.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {drawerWines.map(w => {

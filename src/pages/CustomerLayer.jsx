@@ -454,7 +454,7 @@ export default function CustomerLayer() {
                 </div>
               )}
 
-              {recommendations && recommendations.recommendations.length === 0 && (
+              {recommendations && recommendations?.recommendations?.length === 0 && (
                 <div style={{
                   padding: '24px 16px', textAlign: 'center',
                   color: 'var(--text-dim)', fontSize: 13,
@@ -468,7 +468,7 @@ export default function CustomerLayer() {
                 </div>
               )}
 
-              {recommendations && recommendations.recommendations.length > 0 && (
+              {recommendations && recommendations?.recommendations?.length > 0 && (
                 <div style={{ overflowX: 'auto', margin: '0 -24px' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
@@ -483,7 +483,7 @@ export default function CustomerLayer() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recommendations.recommendations.map(r => {
+                      {(recommendations?.recommendations ?? []).map(r => {
                         const pct = Math.round(r.match_score * 100)
                         return (
                           <tr key={`${r.rank}-${r.wine_family_id}-${r.vintage_year}`}>
@@ -708,12 +708,12 @@ function MatchResultDisplay({ result }) {
       }}>
         <div>
           Match score: <span style={{ fontFamily: 'monospace', color: 'var(--text)' }}>
-            {result.match_score.toFixed(4)}
+            {(result.match_score ?? 0).toFixed(4)}
           </span>
         </div>
         <div>
           Similarity: <span style={{ fontFamily: 'monospace', color: 'var(--text)' }}>
-            {result.similarity_score.toFixed(4)}
+            {(result.similarity_score ?? 0).toFixed(4)}
           </span>
         </div>
       </div>

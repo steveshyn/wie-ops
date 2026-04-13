@@ -120,8 +120,8 @@ export default function HealthDashboard() {
   // Tier chart data
   const tierData = TIER_ORDER.map(t => ({
     tier:  t,
-    count: health.scoring_distribution[t]?.count || 0,
-    pct:   health.scoring_distribution[t]?.pct   || 0,
+    count: (health.scoring_distribution ?? {})[t]?.count || 0,
+    pct:   (health.scoring_distribution ?? {})[t]?.pct   || 0,
   }))
 
   const refreshStr = lastRefresh
@@ -145,14 +145,14 @@ export default function HealthDashboard() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
         gap: 16,
       }}>
-        <StatCard title="Wine Families"     value={health.catalog.total_families.toLocaleString()} />
-        <StatCard title="Scored Vintages"   value={health.catalog.scored_vintages.toLocaleString()}
-          subtitle={`${health.catalog.unscored_vintages} unscored`} />
-        <StatCard title="LWIN Coverage"     value={`${health.coverage.lwin_pct}%`}
-          subtitle={`${health.coverage.lwin_matched} matched`} />
-        <StatCard title="SSURGO Producers"  value={health.coverage.ssurgo_producers} />
-        <P4StatusCard active={health.coverage.p4_active} flatValue={health.coverage.p4_flat_value} />
-        <StatCard title="Retired Families"  value={health.catalog.retired_families} />
+        <StatCard title="Wine Families"     value={health.catalog?.total_families?.toLocaleString() ?? '—'} />
+        <StatCard title="Scored Vintages"   value={health.catalog?.scored_vintages?.toLocaleString() ?? '—'}
+          subtitle={`${health.catalog?.unscored_vintages ?? '—'} unscored`} />
+        <StatCard title="LWIN Coverage"     value={`${(health.coverage ?? {}).lwin_pct ?? '—'}%`}
+          subtitle={`${(health.coverage ?? {}).lwin_matched ?? '—'} matched`} />
+        <StatCard title="SSURGO Producers"  value={(health.coverage ?? {}).ssurgo_producers ?? '—'} />
+        <P4StatusCard active={(health.coverage ?? {}).p4_active} flatValue={(health.coverage ?? {}).p4_flat_value} />
+        <StatCard title="Retired Families"  value={health.catalog?.retired_families ?? '—'} />
       </div>
 
       {/* SECTION 2 — Scoring Distribution */}
@@ -202,27 +202,27 @@ export default function HealthDashboard() {
       }}>
         <CoverageCard
           title="LWIN Coverage"
-          big={`${health.coverage.lwin_pct}%`}
-          pct={health.coverage.lwin_pct}
-          subtitle={`${health.coverage.lwin_matched} matched · ${health.coverage.lwin_unmatched} unmatched`}
+          big={`${(health.coverage ?? {}).lwin_pct ?? '—'}%`}
+          pct={(health.coverage ?? {}).lwin_pct}
+          subtitle={`${(health.coverage ?? {}).lwin_matched ?? '—'} matched · ${(health.coverage ?? {}).lwin_unmatched ?? '—'} unmatched`}
           linkLabel="View Unmatched →"
           onLinkClick={() => navigate('/catalog?lwin=missing')}
         />
         <CoverageCard
           title="Vector Coverage"
-          big={`${(health.catalog.scored_vintages - health.coverage.wines_missing_vectors).toLocaleString()}`}
-          pct={health.catalog.scored_vintages > 0
-            ? Math.round((1 - health.coverage.wines_missing_vectors / health.catalog.scored_vintages) * 100)
+          big={`${((health.catalog?.scored_vintages ?? 0) - ((health.coverage ?? {}).wines_missing_vectors ?? 0)).toLocaleString()}`}
+          pct={(health.catalog?.scored_vintages ?? 0) > 0
+            ? Math.round((1 - ((health.coverage ?? {}).wines_missing_vectors ?? 0) / (health.catalog?.scored_vintages ?? 1)) * 100)
             : 0}
-          subtitle={`${health.coverage.wines_missing_vectors} missing 1+ dimensions`}
+          subtitle={`${(health.coverage ?? {}).wines_missing_vectors ?? '—'} missing 1+ dimensions`}
           linkLabel="View Missing →"
           onLinkClick={() => navigate('/catalog')}
         />
         <CoverageCard
           title="Override Activity"
-          big={`${health.coverage.pillar_overrides_active + health.coverage.prestige_overrides_active}`}
+          big={`${((health.coverage ?? {}).pillar_overrides_active ?? 0) + ((health.coverage ?? {}).prestige_overrides_active ?? 0)}`}
           pct={null}
-          subtitle={`${health.coverage.pillar_overrides_active} pillar · ${health.coverage.prestige_overrides_active} prestige`}
+          subtitle={`${(health.coverage ?? {}).pillar_overrides_active ?? 0} pillar · ${(health.coverage ?? {}).prestige_overrides_active ?? 0} prestige`}
           linkLabel="View Overrides →"
           onLinkClick={() => navigate('/overrides')}
         />
@@ -242,13 +242,13 @@ export default function HealthDashboard() {
               fontSize: 28, fontWeight: 600, color: 'var(--gold)',
               fontFamily: 'var(--font-serif)', marginBottom: 10,
             }}>
-              {health.recent_activity.audit_rows_24h}
+              {health.recent_activity?.audit_rows_24h ?? '—'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {Object.entries(health.recent_activity.operator_breakdown || {}).map(([op, cnt]) => (
+              {Object.entries(health.recent_activity?.operator_breakdown ?? {}).map(([op, cnt]) => (
                 <OperatorChip key={op} operator={op} count={cnt} />
               ))}
-              {Object.keys(health.recent_activity.operator_breakdown || {}).length === 0 && (
+              {Object.keys(health.recent_activity?.operator_breakdown ?? {}).length === 0 && (
                 <span style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
                   No activity in last 24 hours
                 </span>
@@ -264,8 +264,8 @@ export default function HealthDashboard() {
               Last Recompute
             </div>
             <div style={{ fontSize: 13, color: 'var(--text)' }}>
-              {timeAgo(health.recent_activity.last_recompute_at)}
-              {health.recent_activity.last_recompute_at && (
+              {timeAgo(health.recent_activity?.last_recompute_at)}
+              {health.recent_activity?.last_recompute_at && (
                 <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 8 }}>
                   ({new Date(health.recent_activity.last_recompute_at).toLocaleString('en-US', { hour12: false })})
                 </span>
@@ -280,13 +280,13 @@ export default function HealthDashboard() {
             }}>
               Score Anomalies (Last 30d, Δ &gt; 5)
             </div>
-            {health.anomalies.score_changed_gt5_last30d.length === 0 ? (
+            {(health.anomalies?.score_changed_gt5_last30d ?? []).length === 0 ? (
               <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
                 No anomalies
               </div>
             ) : (
               <div>
-                {health.anomalies.score_changed_gt5_last30d.map((a, i) => (
+                {(health.anomalies?.score_changed_gt5_last30d ?? []).map((a, i) => (
                   <div key={i} style={{ fontSize: 12, color: 'var(--text)' }}>
                     {a.wine_name} · {a.old_score} → {a.new_score} (Δ {a.delta})
                   </div>

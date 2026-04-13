@@ -316,6 +316,10 @@ function Exchange({ entry }) {
 }
 
 
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function MarkdownLite({ text }) {
   if (!text) return null
   // Minimal markdown: bold, tables, line breaks
@@ -373,7 +377,8 @@ function MarkdownLite({ text }) {
     }
 
     // Bold
-    const boldified = line.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    const escaped = escapeHtml(line)
+    const boldified = escaped.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
     if (line.trim()) {
       elements.push(
         <div key={`l-${i}`} dangerouslySetInnerHTML={{ __html: boldified }} />

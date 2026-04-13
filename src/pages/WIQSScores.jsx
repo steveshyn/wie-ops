@@ -61,10 +61,10 @@ function HistoryTooltip({ active, payload }) {
       </div>
       <div style={{ color: '#888', marginBottom: 4 }}>{fmtDate(d.computed_at)}</div>
       <div style={{ color: '#aaa', marginBottom: 2 }}>
-        P1 {d.p1_site_terroir?.toFixed(1)} · P2 {d.p2_producer_prestige?.toFixed(1)} · P3 {d.p3_classification?.toFixed(1)}
+        P1 {d.p1_site_terroir?.toFixed(1) ?? '—'} · P2 {d.p2_producer_prestige?.toFixed(1) ?? '—'} · P3 {d.p3_classification?.toFixed(1) ?? '—'}
       </div>
       <div style={{ color: '#aaa', marginBottom: 4 }}>
-        P4 {d.p4_market_validation?.toFixed(1)} · P5 {d.p5_sensory_complexity?.toFixed(1)}
+        P4 {d.p4_market_validation?.toFixed(1) ?? '—'} · P5 {d.p5_sensory_complexity?.toFixed(1) ?? '—'}
       </div>
       <div style={{ color: '#666' }}>Reason: {d.compute_reason}</div>
     </div>
@@ -192,7 +192,7 @@ export default function WIQSScores() {
     try {
       await recomputeWine(selectedWine.wine_family_id, 'manual_recompute')
       await refetchHistory()
-    } catch { /* ignore */ }
+    } catch (err) { setBatchResult({ ok: false, message: err.message || 'Recompute failed' }) }
     finally { setRecomputing(false) }
   }
 
@@ -308,7 +308,7 @@ export default function WIQSScores() {
                   borderRadius: 8, overflow: 'hidden', zIndex: 100, minWidth: 200,
                 }}>
                   {[
-                    { scope: 'all',            label: 'All Wines (1,047)' },
+                    { scope: 'all',            label: `All Wines (${wines.length.toLocaleString()})` },
                     { scope: 'low_confidence', label: 'Low Confidence Only' },
                   ].map(({ scope, label }) => (
                     <button key={scope}
@@ -529,9 +529,9 @@ export default function WIQSScores() {
                   maxHeight: 300, overflowY: 'auto',
                 }}>
                   {histResults.map(r => (
-                    <button key={r.id}
+                    <button key={r.wine_family_id || r.id}
                       onClick={() => {
-                        setSelectedWine({ wine_family_id: r.id, wine_name: r.wine_name, producer_name: r.producer_name })
+                        setSelectedWine({ wine_family_id: r.wine_family_id || r.id, wine_name: r.wine_name, producer_name: r.producer_name })
                         setHistSearch('')
                         setHistResults([])
                       }}
@@ -795,7 +795,7 @@ export default function WIQSScores() {
             <div style={{ fontSize: 12, color: '#888', marginBottom: 20 }}>
               Recompute WIQS scores for{' '}
               <b style={{ color: '#c9a84c' }}>
-                {batchConfirm === 'all' ? 'all 1,047 wines' : 'low confidence wines'}
+                {batchConfirm === 'all' ? `all ${wines.length.toLocaleString()} wines` : 'low confidence wines'}
               </b>.
               This may take a minute.
             </div>

@@ -10,10 +10,10 @@ import EmptyState     from '../components/EmptyState'
 import { scoreToColor, TIER_COLORS } from '../utils/tierColors'
 import { fmtScore }   from '../utils/formatters'
 
-const VALID_TIERS = ['grand_cru', 'premier_cru', 'village', 'regional', 'commercial']
+const VALID_TIERS = ['exceptional', 'distinguished', 'quality', 'standard', 'basic']
 const TIER_LABELS = {
-  grand_cru: 'Grand Cru', premier_cru: 'Premier Cru',
-  village: 'Village', regional: 'Regional', commercial: 'Commercial',
+  exceptional: 'Exceptional', distinguished: 'Distinguished',
+  quality: 'Quality', standard: 'Standard', basic: 'Basic',
 }
 
 export default function DataQuality() {
@@ -50,7 +50,7 @@ export default function DataQuality() {
 
   const issueForMode = (issue) => ({
     wine: issue,
-    mode: tab === 'anomaly' ? 'tier' : 'region',
+    mode: tab === 'anomaly' ? 'tier' : tab === 'confidence' ? 'detail' : 'region',
   })
 
   const tabs = [
@@ -301,6 +301,12 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
   const [recomputing,    setRecomputing]    = useState(false)
   const [newScore,       setNewScore]       = useState(null)
 
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
   // Add subregion mode
   const [qualityScore, setQualityScore] = useState('')
   const [subNotes,     setSubNotes]     = useState('')
@@ -330,6 +336,7 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
           notes: subNotes.trim() || null,
         })
         setUpdated(true)
+        onFixed()
       } else {
         if (!reason.trim() || reason.trim().length < 10) {
           setSaveError('Reason must be at least 10 characters.'); setSaving(false); return
@@ -342,6 +349,7 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
           await updateWineTier(wine.wine_family_id, selectedTier, reason)
         }
         setUpdated(true)
+        onFixed()
       }
     } catch (err) {
       setSaveError(err.message)
@@ -449,6 +457,26 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
                 />
               </Field>
             </>
+          ) : mode === 'detail' ? (
+            <>
+              <Field label="Region">
+                <span style={{ color: 'var(--text)' }}>{wine.region_name || '—'}</span>
+              </Field>
+              <Field label="Country">
+                <span style={{ color: 'var(--text)' }}>{wine.country || '—'}</span>
+              </Field>
+              <Field label="Tier">
+                <Badge tier={wine.production_tier} />
+              </Field>
+              <Field label="WIQS Score">
+                <span style={{ color: scoreToColor(wine.wiqs_score).text, fontWeight: 600 }}>{fmtScore(wine.wiqs_score)}</span>
+              </Field>
+              <Field label="Confidence">
+                <span style={{ color: wine.wiqs_confidence > 0.8 ? 'var(--green-light)' : wine.wiqs_confidence >= 0.6 ? 'var(--amber)' : 'var(--red)', fontWeight: 600 }}>
+                  {wine.wiqs_confidence != null ? `${(wine.wiqs_confidence * 100).toFixed(0)}%` : '—'}
+                </span>
+              </Field>
+            </>
           ) : mode === 'region' ? (
             <>
               <Field label="Current Region">
@@ -494,7 +522,7 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
             </>
           )}
 
-          {mode !== 'add_subregion' && (
+          {mode !== 'add_subregion' && mode !== 'detail' && (
             <Field label="Reason (required)">
               <textarea
                 rows={3}
@@ -517,7 +545,7 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
             </div>
           )}
 
-          {!updated ? (
+          {mode !== 'detail' && (!updated ? (
             <button
               onClick={handleSave}
               disabled={saving}
@@ -572,7 +600,7 @@ function EditPanel({ wine, mode, regions, onClose, onFixed }) {
                 </button>
               )}
             </div>
-          )}
+          ))}
         </div>
       </div>
     </>

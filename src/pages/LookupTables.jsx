@@ -323,7 +323,8 @@ function SubregionTab({ subregions, onUpdate }) {
     return r
   }, [rows, search, country, sort])
 
-  const avg = rows.length ? (rows.reduce((s, r) => s + r.quality_score, 0) / rows.length).toFixed(1) : '—'
+  const numericScores = rows.map(r => r.quality_score).filter(v => typeof v === 'number' && !isNaN(v))
+  const avg = numericScores.length ? (numericScores.reduce((s, v) => s + v, 0) / numericScores.length).toFixed(1) : '—'
   const highest = rows.length ? [...rows].sort((a, b) => b.quality_score - a.quality_score)[0] : null
   const lowest  = rows.length ? [...rows].sort((a, b) => a.quality_score - b.quality_score)[0] : null
 
@@ -558,7 +559,7 @@ function ProducerTab({ producers, onUpdate }) {
     r = [...r].sort((a, b) => {
       const dir = sort.dir === 'desc' ? -1 : 1
       if (sort.field === 'prestige_score') return dir * (a.prestige_score - b.prestige_score)
-      if (sort.field === 'tier') return dir * PRODUCER_TIERS.indexOf(a.tier) - PRODUCER_TIERS.indexOf(b.tier)
+      if (sort.field === 'tier') return dir * (PRODUCER_TIERS.indexOf(a.tier) - PRODUCER_TIERS.indexOf(b.tier))
       return dir * a.producer_name.localeCompare(b.producer_name)
     })
     return r

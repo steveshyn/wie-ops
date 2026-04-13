@@ -95,7 +95,7 @@ function StepIndicator({ current }) {
 
 // ── Step 1 ────────────────────────────────────────────────────────────────────
 
-function Step1({ year, setYear, scope, setScope, regionId, setRegionId, tier, setTier, catalogStats, regions, onNext }) {
+function Step1({ year, setYear, scope, setScope, regionId, setRegionId, tier, setTier, catalogStats, regions, onNext, validationError }) {
   return (
     <div style={{ maxWidth: 560 }}>
       <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 6 }}>Select the harvest year to add</h3>
@@ -174,6 +174,9 @@ function Step1({ year, setYear, scope, setScope, regionId, setRegionId, tier, se
         </div>
       </div>
 
+      {validationError && (
+        <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{validationError}</div>
+      )}
       <GoldBtn onClick={onNext}>Next: Review Scope →</GoldBtn>
     </div>
   )
@@ -182,7 +185,9 @@ function Step1({ year, setYear, scope, setScope, regionId, setRegionId, tier, se
 // ── Step 2 ────────────────────────────────────────────────────────────────────
 
 function Step2({ year, scope, scopeLabel, catalogStats, onBack, onConfirm }) {
-  const count = catalogStats?.total_families ?? 0
+  const count = scope === 'all'
+    ? (catalogStats?.total_families ?? 0)
+    : `${catalogStats?.total_families ?? 0} (estimated)`
 
   return (
     <div style={{ maxWidth: 560 }}>
@@ -249,7 +254,7 @@ function Step2({ year, scope, scopeLabel, catalogStats, onBack, onConfirm }) {
 
 // ── Step 3 ────────────────────────────────────────────────────────────────────
 
-function Step3({ year, scope, onComplete }) {
+function Step3({ year, scope, regionId, tier, onComplete }) {
   const [result, setResult]   = useState(null)
   const [error, setError]     = useState('')
 
@@ -263,9 +268,10 @@ function Step3({ year, scope, onComplete }) {
         // Current implementation triggers a full recompute which achieves
         // similar results but doesn't create new vintage rows.
         // Full annual workflow requires backend work in a future build.
-        const res = await batchRecompute(scope === 'all' ? 'all' : scope, {
-          reason: `annual_vintage_add_${year}`,
-        })
+        const opts = { reason: `annual_vintage_add_${year}` }
+        if (scope === 'region' && regionId) opts.region_name = regionId
+        if (scope === 'tier' && tier) opts.tier = tier
+        const res = await batchRecompute(scope === 'all' ? 'all' : scope, opts)
         if (!cancelled) {
           setResult(res)
           onComplete(res)
@@ -522,6 +528,7 @@ export default function AnnualVintage() {
   const [scope, setScope]       = useState('all')
   const [regionId, setRegionId] = useState('')
   const [tier, setTier]         = useState('')
+  const [validationError, setValidationError] = useState('')
   const [result, setResult]     = useState(null)
 
   const [catalogStats, setCatalogStats] = useState(null)
@@ -557,8 +564,9 @@ export default function AnnualVintage() {
       : tier || 'Selected tier'
 
   const handleStep1Next = () => {
-    if (scope === 'region' && !regionId) return
-    if (scope === 'tier' && !tier) return
+    if (scope === 'region' && !regionId) { setValidationError('Please select a region.'); return }
+    if (scope === 'tier' && !tier) { setValidationError('Please select a tier.'); return }
+    setValidationError('')
     setStep(2)
   }
 
@@ -575,7 +583,7 @@ export default function AnnualVintage() {
   }
 
   const latestVintage = wines.length
-    ? Math.max(...wines.map(w => parseInt(w.wiqs_computed_at?.slice(0, 4) || 0)))
+    ? Math.max(...wines.map(w => parseInt(w.vintage_year || 0)))
     : null
 
   return (
@@ -619,12 +627,13 @@ export default function AnnualVintage() {
       {step === 1 && (
         <Step1
           year={year} setYear={setYear}
-          scope={scope} setScope={setScope}
+          scope={scope} setScope={v => { setScope(v); setValidationError('') }}
           regionId={regionId} setRegionId={setRegionId}
           tier={tier} setTier={setTier}
           catalogStats={catalogStats}
           regions={regions}
           onNext={handleStep1Next}
+          validationError={validationError}
         />
       )}
       {step === 2 && (
@@ -636,7 +645,7 @@ export default function AnnualVintage() {
         />
       )}
       {step === 3 && (
-        <Step3 year={year} scope={scope} onComplete={handleComplete} />
+        <Step3 year={year} scope={scope} regionId={regionId} tier={tier} onComplete={handleComplete} />
       )}
       {step === 4 && (
         <Step4 year={year} result={result} onReset={handleReset} />

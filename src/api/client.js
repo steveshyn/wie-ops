@@ -100,10 +100,12 @@ export const searchWines = (q) =>
   apiFetch(`/wines/search?q=${encodeURIComponent(q)}`)
 
 // ARCH-001 Audit log
-export const getAuditLog = ({ tableName, operator, limit = 50, offset = 0 } = {}) => {
+export const getAuditLog = ({ tableName, operator, limit = 50, offset = 0, from_date, to_date } = {}) => {
   const params = new URLSearchParams()
   if (tableName) params.set('table_name', tableName)
   if (operator)  params.set('operator',   operator)
+  if (from_date) params.set('from_date',  from_date)
+  if (to_date)   params.set('to_date',    to_date)
   params.set('limit',  String(limit))
   params.set('offset', String(offset))
   return apiFetch(`/ops/audit?${params.toString()}`)
