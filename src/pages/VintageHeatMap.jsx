@@ -100,6 +100,7 @@ export default function VintageHeatMap() {
   const [tooltipPos,    setTooltipPos]    = useState({ x: 0, y: 0 })
   const [selectedCell,  setSelectedCell]  = useState(null)
   const [drawerOpen,    setDrawerOpen]    = useState(false)
+  const [collapsedZones, setCollapsedZones] = useState(new Set())
 
   const { data: heatmapRes, loading: hmLoading } = useAPI(getVintageHeatMap)
   const { data: scoresRes, loading: scoresLoading } = useAPI(getWIQSScores)
@@ -135,24 +136,98 @@ export default function VintageHeatMap() {
     return m
   }, [rawData])
 
-  // Filtered regions grouped by country
-  const regionsByCountry = useMemo(() => {
-    const groups = {}
+  // Build hierarchical tree: Country → Zone → Region → Subregion
+  const hierarchyByCountry = useMemo(() => {
+    // 1. Collect unique regions with metadata
+    const regionMeta = {}
     for (const d of rawData) {
       if (countryFilter !== 'All' && d.country !== countryFilter) continue
-      if (!groups[d.country]) groups[d.country] = new Set()
-      groups[d.country].add(d.region)
+      if (!regionMeta[d.region]) {
+        regionMeta[d.region] = {
+          country: d.country,
+          zone: d.zone || null,
+          parent_region: d.parent_region || null,
+        }
+      }
     }
+
+    // 2. Group by country
+    const byCountry = {}
+    for (const [name, meta] of Object.entries(regionMeta)) {
+      if (!byCountry[meta.country]) byCountry[meta.country] = []
+      byCountry[meta.country].push({ name, ...meta })
+    }
+
+    // 3. Build hierarchy per country
     const result = {}
-    for (const [country, regions] of Object.entries(groups)) {
-      result[country] = Array.from(regions).sort()
+    for (const [country, regions] of Object.entries(byCountry).sort(([a], [b]) => a.localeCompare(b))) {
+      const ungrouped = []
+      const zoneMap = {} // zoneName → { regionNames: Set, subregionMap: {} }
+      const allNames = new Set(regions.map(r => r.name))
+
+      for (const r of regions) {
+        const isZoneLevel = !r.zone || r.zone === r.name
+        const isSubregion = r.parent_region && r.parent_region !== r.zone && allNames.has(r.parent_region)
+
+        if (isZoneLevel && r.zone === r.name) {
+          // This region IS a zone (e.g., "California")
+          if (!zoneMap[r.name]) zoneMap[r.name] = { regionNames: new Set(), subregionMap: {} }
+          zoneMap[r.name].regionNames.add(r.name) // zone itself as a data row
+        } else if (isSubregion) {
+          // Subregion under a parent region (e.g., "Calistoga" under "Napa Valley")
+          const zoneName = r.zone || '_ungrouped'
+          if (!zoneMap[zoneName]) zoneMap[zoneName] = { regionNames: new Set(), subregionMap: {} }
+          if (!zoneMap[zoneName].subregionMap[r.parent_region]) zoneMap[zoneName].subregionMap[r.parent_region] = []
+          zoneMap[zoneName].subregionMap[r.parent_region].push(r.name)
+        } else if (r.zone) {
+          // Regular region under a zone (e.g., "Napa Valley" under "California")
+          if (!zoneMap[r.zone]) zoneMap[r.zone] = { regionNames: new Set(), subregionMap: {} }
+          zoneMap[r.zone].regionNames.add(r.name)
+        } else {
+          ungrouped.push(r.name)
+        }
+      }
+
+      // 4. Assemble sorted output
+      const zones = Object.entries(zoneMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([zoneName, { regionNames, subregionMap }]) => {
+          const hasZoneRow = regionNames.has(zoneName)
+          const childRegions = Array.from(regionNames)
+            .filter(n => n !== zoneName)
+            .sort()
+            .map(name => ({ name, subregions: (subregionMap[name] || []).sort() }))
+          return { zoneName, zoneKey: `${country}::${zoneName}`, hasZoneRow, regions: childRegions }
+        })
+
+      result[country] = { ungrouped: ungrouped.sort(), zones }
     }
     return result
   }, [rawData, countryFilter])
 
-  const allRegions = useMemo(() =>
-    Object.values(regionsByCountry).flat()
-  , [regionsByCountry])
+  function toggleZone(zoneKey) {
+    setCollapsedZones(prev => {
+      const next = new Set(prev)
+      if (next.has(zoneKey)) next.delete(zoneKey)
+      else next.add(zoneKey)
+      return next
+    })
+  }
+
+  const allRegions = useMemo(() => {
+    const list = []
+    for (const { ungrouped, zones } of Object.values(hierarchyByCountry)) {
+      list.push(...ungrouped)
+      for (const zone of zones) {
+        if (zone.hasZoneRow) list.push(zone.zoneName)
+        for (const reg of zone.regions) {
+          list.push(reg.name)
+          list.push(...reg.subregions)
+        }
+      }
+    }
+    return [...new Set(list)]
+  }, [hierarchyByCountry])
 
   // Row summaries (avg across years)
   const rowSummary = useMemo(() => {
@@ -215,6 +290,82 @@ export default function VintageHeatMap() {
     const rect = e.currentTarget.getBoundingClientRect()
     setHoveredCell({ region, year, score: cell[metric], count: cell.wine_count })
     setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8 })
+  }
+
+  // ── Row renderer (used for regions at every hierarchy level) ──────────────
+  function renderRegionRow(region, indent) {
+    const summary = rowSummary[region]
+    return (
+      <div key={region} style={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
+        {/* Row label */}
+        <div style={{
+          width: 140, textAlign: 'right', paddingRight: 8,
+          paddingLeft: indent,
+          fontSize: 11,
+          color: indent > 28 ? '#555' : '#777',
+          fontStyle: indent > 28 ? 'italic' : 'normal',
+          flexShrink: 0,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          lineHeight: `${CELL}px`,
+        }} title={region}>
+          {region}
+        </div>
+
+        {/* Cells */}
+        {years.map(year => {
+          const cell = lookup[region]?.[year]
+          const val  = cell && cell.wine_count >= minWines ? cell[metric] : null
+          const bg   = heatColor(val)
+          const txt  = textColorForBg(val)
+
+          return (
+            <div key={year}
+              onMouseEnter={e => cell && cell.wine_count >= minWines
+                ? handleCellMouseEnter(e, region, year, cell)
+                : setHoveredCell(null)}
+              onMouseLeave={() => setHoveredCell(null)}
+              onClick={() => cell && cell.wine_count >= minWines && handleCellClick(region, year, cell)}
+              style={{
+                width: CELL, height: CELL, flexShrink: 0,
+                background: bg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10, color: txt,
+                cursor: val != null ? 'pointer' : 'default',
+                border: '1px solid rgba(0,0,0,0.2)',
+                transition: 'outline 0.1s',
+                outline: hoveredCell?.region === region && hoveredCell?.year === year
+                  ? '2px solid rgba(255,255,255,0.6)' : 'none',
+                outlineOffset: -1,
+              }}>
+              {val != null ? val.toFixed(0) : ''}
+            </div>
+          )
+        })}
+
+        {/* Row summary bar */}
+        <div style={{
+          width: 52, paddingLeft: 6, flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: 4,
+        }}>
+          {summary != null && (
+            <>
+              <div style={{
+                height: 6, flex: 1,
+                background: '#1e1e1e', borderRadius: 3, overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%', width: `${Math.min(100, summary)}%`,
+                  background: heatColor(summary), borderRadius: 3,
+                }} />
+              </div>
+              <span style={{ fontSize: 9, color: '#555', width: 22, textAlign: 'right' }}>
+                {summary.toFixed(0)}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    )
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -308,8 +459,8 @@ export default function VintageHeatMap() {
           </div>
         </div>
 
-        {/* Rows */}
-        {Object.entries(regionsByCountry).map(([country, regions]) => (
+        {/* Rows — hierarchical: Country → Zone → Region → Subregion */}
+        {Object.entries(hierarchyByCountry).map(([country, { ungrouped, zones }]) => (
           <div key={country}>
             {/* Country group header */}
             <div style={{
@@ -321,73 +472,56 @@ export default function VintageHeatMap() {
               {country}
             </div>
 
-            {regions.map(region => {
-              const summary = rowSummary[region]
+            {/* Ungrouped regions (no zone) */}
+            {ungrouped.map(region => renderRegionRow(region, 0))}
+
+            {/* Zones */}
+            {zones.map(zone => {
+              const collapsed = collapsedZones.has(zone.zoneKey)
+              const childCount = zone.regions.length + zone.regions.reduce((s, r) => s + r.subregions.length, 0)
+                + (zone.hasZoneRow ? 1 : 0)
               return (
-                <div key={region} style={{ display: 'flex', alignItems: 'center', marginBottom: 2 }}>
-                  {/* Row label */}
-                  <div style={{
-                    width: 140, textAlign: 'right', paddingRight: 8,
-                    fontSize: 11, color: '#777', flexShrink: 0,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    lineHeight: `${CELL}px`,
-                  }} title={region}>
-                    {region}
+                <div key={zone.zoneKey}>
+                  {/* Zone header */}
+                  <div
+                    onClick={() => toggleZone(zone.zoneKey)}
+                    style={{
+                      display: 'flex', alignItems: 'center',
+                      padding: '4px 0 4px 8px', cursor: 'pointer',
+                      marginBottom: 2, userSelect: 'none',
+                    }}
+                  >
+                    <span style={{
+                      display: 'inline-block', transition: 'transform 150ms',
+                      transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
+                      fontSize: 8, color: '#666', marginRight: 6, width: 10,
+                    }}>&#9654;</span>
+                    <span style={{
+                      fontSize: 10, color: '#999', fontWeight: 600,
+                      letterSpacing: 0.5,
+                    }}>
+                      {zone.zoneName}
+                    </span>
+                    <span style={{ fontSize: 9, color: '#444', marginLeft: 6 }}>
+                      ({childCount})
+                    </span>
                   </div>
 
-                  {/* Cells */}
-                  {years.map(year => {
-                    const cell = lookup[region]?.[year]
-                    const val  = cell && cell.wine_count >= minWines ? cell[metric] : null
-                    const bg   = heatColor(val)
-                    const txt  = textColorForBg(val)
+                  {!collapsed && (
+                    <>
+                      {/* Zone itself as a data row (if it has wine data) */}
+                      {zone.hasZoneRow && renderRegionRow(zone.zoneName, 14)}
 
-                    return (
-                      <div key={year}
-                        onMouseEnter={e => cell && cell.wine_count >= minWines
-                          ? handleCellMouseEnter(e, region, year, cell)
-                          : setHoveredCell(null)}
-                        onMouseLeave={() => setHoveredCell(null)}
-                        onClick={() => cell && cell.wine_count >= minWines && handleCellClick(region, year, cell)}
-                        style={{
-                          width: CELL, height: CELL, flexShrink: 0,
-                          background: bg,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 10, color: txt,
-                          cursor: val != null ? 'pointer' : 'default',
-                          border: '1px solid rgba(0,0,0,0.2)',
-                          transition: 'outline 0.1s',
-                          outline: hoveredCell?.region === region && hoveredCell?.year === year
-                            ? '2px solid rgba(255,255,255,0.6)' : 'none',
-                          outlineOffset: -1,
-                        }}>
-                        {val != null ? val.toFixed(0) : ''}
-                      </div>
-                    )
-                  })}
-
-                  {/* Row summary bar */}
-                  <div style={{
-                    width: 52, paddingLeft: 6, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', gap: 4,
-                  }}>
-                    {summary != null && (
-                      <>
-                        <div style={{
-                          height: 6, flex: 1,
-                          background: '#1e1e1e', borderRadius: 3, overflow: 'hidden',
-                        }}>
-                          <div style={{
-                            height: '100%', width: `${Math.min(100, summary)}%`,
-                            background: heatColor(summary), borderRadius: 3,
-                          }} />
+                      {/* Regions under this zone */}
+                      {zone.regions.map(reg => (
+                        <div key={reg.name}>
+                          {renderRegionRow(reg.name, 28)}
+                          {/* Subregions under this region */}
+                          {reg.subregions.map(sub => renderRegionRow(sub, 42))}
                         </div>
-                        <span style={{ fontSize: 9, color: '#555', width: 22, textAlign: 'right' }}>
-                          {summary.toFixed(0)}
-                        </span>
-                      </>
-                    )}
-                  </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               )
             })}
