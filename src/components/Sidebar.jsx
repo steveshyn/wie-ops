@@ -139,7 +139,7 @@ export default function Sidebar({ onLogout }) {
         <div style={{
           fontSize: 12, color: 'var(--text-dim)', letterSpacing: '0.06em',
           marginTop: 2,
-        }}>WIE Ops</div>
+        }}>WINE Operations Control</div>
       </div>
 
       {/* Nav items */}
