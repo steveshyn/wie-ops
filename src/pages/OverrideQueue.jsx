@@ -5,6 +5,7 @@ import {
 } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
+import HelpTip from '../components/HelpTip'
 
 const OPERATOR_STYLES = {
   steve:         { bg: 'rgba(201,168,76,0.15)', border: '#c9a84c', text: '#c9a84c' },
@@ -113,10 +114,10 @@ export default function OverrideQueue() {
         borderBottom: '1px solid var(--border)',
       }}>
         <TabButton active={tab === 'pillars'}  onClick={() => setTab('pillars')}>
-          Pillar Overrides ({pillars.length})
+          Pillar Overrides ({pillars.length})<HelpTip term="pillar_overrides" />
         </TabButton>
         <TabButton active={tab === 'prestige'} onClick={() => setTab('prestige')}>
-          Prestige Overrides ({prestige.length})
+          Prestige Overrides ({prestige.length})<HelpTip term="prestige_overrides" />
         </TabButton>
       </div>
 

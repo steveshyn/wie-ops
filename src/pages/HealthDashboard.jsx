@@ -6,6 +6,7 @@ import {
 import { getAdminHealth, getDataHealthExtended } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import StatCard from '../components/StatCard'
+import HelpTip from '../components/HelpTip'
 
 const TIER_COLORS = {
   exceptional:   '#c9a84c',
@@ -145,18 +146,18 @@ export default function HealthDashboard() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
         gap: 16,
       }}>
-        <StatCard title="Wine Families"     value={health.catalog?.total_families?.toLocaleString() ?? '—'} />
+        <StatCard title="Wine Families"     value={health.catalog?.total_families?.toLocaleString() ?? '—'} helpTerm="wine_families" />
         <StatCard title="Scored Vintages"   value={health.catalog?.scored_vintages?.toLocaleString() ?? '—'}
-          subtitle={`${health.catalog?.unscored_vintages ?? '—'} unscored`} />
+          subtitle={`${health.catalog?.unscored_vintages ?? '—'} unscored`} helpTerm="wiqs_scored" />
         <StatCard title="LWIN Coverage"     value={`${(health.coverage ?? {}).lwin_pct ?? '—'}%`}
-          subtitle={`${(health.coverage ?? {}).lwin_matched ?? '—'} matched`} />
-        <StatCard title="SSURGO Producers"  value={(health.coverage ?? {}).ssurgo_producers ?? '—'} />
+          subtitle={`${(health.coverage ?? {}).lwin_matched ?? '—'} matched`} helpTerm="lwin" />
+        <StatCard title="SSURGO Producers"  value={(health.coverage ?? {}).ssurgo_producers ?? '—'} helpTerm="ssurgo_producers" />
         <P4StatusCard active={(health.coverage ?? {}).p4_active} flatValue={(health.coverage ?? {}).p4_flat_value} />
         <StatCard title="Retired Families"  value={health.catalog?.retired_families ?? '—'} />
       </div>
 
       {/* SECTION 2 — Scoring Distribution */}
-      <Card title="Scoring Distribution">
+      <Card title={<>Scoring Distribution<HelpTip term="scoring_distribution" /></>}>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={tierData} layout="vertical" margin={{ left: 0, right: 60, top: 4, bottom: 4 }}>
             <XAxis type="number" hide />
@@ -201,7 +202,7 @@ export default function HealthDashboard() {
         gap: 16,
       }}>
         <CoverageCard
-          title="LWIN Coverage"
+          title={<>LWIN Coverage<HelpTip term="lwin" /></>}
           big={`${(health.coverage ?? {}).lwin_pct ?? '—'}%`}
           pct={(health.coverage ?? {}).lwin_pct}
           subtitle={`${(health.coverage ?? {}).lwin_matched ?? '—'} matched · ${(health.coverage ?? {}).lwin_unmatched ?? '—'} unmatched`}
@@ -209,7 +210,7 @@ export default function HealthDashboard() {
           onLinkClick={() => navigate('/catalog?lwin=missing')}
         />
         <CoverageCard
-          title="Vector Coverage"
+          title={<>Vector Coverage<HelpTip term="vector_coverage" /></>}
           big={`${((health.catalog?.scored_vintages ?? 0) - ((health.coverage ?? {}).wines_missing_vectors ?? 0)).toLocaleString()}`}
           pct={(health.catalog?.scored_vintages ?? 0) > 0
             ? Math.round((1 - ((health.coverage ?? {}).wines_missing_vectors ?? 0) / (health.catalog?.scored_vintages ?? 1)) * 100)
@@ -278,7 +279,7 @@ export default function HealthDashboard() {
               fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
               textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 6,
             }}>
-              Score Anomalies (Last 30d, Δ &gt; 5)
+              Score Anomalies (Last 30d, Δ &gt; 5)<HelpTip term="score_anomalies" />
             </div>
             {(health.anomalies?.score_changed_gt5_last30d ?? []).length === 0 ? (
               <div style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>
@@ -422,7 +423,7 @@ function P4StatusCard({ active, flatValue }) {
         fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
         textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 6,
       }}>
-        P4 Market Validation
+        P4 Market Validation<HelpTip term="p4" />
       </div>
       <div style={{
         fontSize: 22, fontWeight: 600,

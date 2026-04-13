@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState     from '../components/EmptyState'
 import { scoreToColor, TIER_COLORS } from '../utils/tierColors'
 import { fmtScore }   from '../utils/formatters'
+import HelpTip        from '../components/HelpTip'
 
 const VALID_TIERS = ['exceptional', 'distinguished', 'quality', 'standard', 'basic']
 const TIER_LABELS = {
@@ -54,9 +55,9 @@ export default function DataQuality() {
   })
 
   const tabs = [
-    { key: 'p1',         label: 'P1 Misses',       count: issues?.p1_misses?.length ?? 0 },
-    { key: 'confidence', label: 'Low Confidence',   count: issues?.low_confidence?.length ?? 0 },
-    { key: 'anomaly',    label: 'Tier Anomalies',   count: issues?.tier_anomalies?.length ?? 0 },
+    { key: 'p1',         label: <>P1 Misses<HelpTip term="p1_misses" /></>,       count: issues?.p1_misses?.length ?? 0 },
+    { key: 'confidence', label: <>Low Confidence<HelpTip term="low_confidence" /></>,   count: issues?.low_confidence?.length ?? 0 },
+    { key: 'anomaly',    label: <>Tier Anomalies<HelpTip term="tier_anomalies" /></>,   count: issues?.tier_anomalies?.length ?? 0 },
   ]
 
   const currentList = () => {
@@ -176,27 +177,27 @@ const TH = ({ children, onClick, style = {} }) => (
 
 function P1Headers({ sortDir, setSortDir }) {
   return <>
-    <TH>Wine</TH><TH>Producer</TH><TH>Country</TH><TH>State</TH><TH>Region</TH><TH>Tier</TH>
+    <TH>Wine</TH><TH>Producer</TH><TH>Country</TH><TH>State</TH><TH>Region</TH><TH>Tier<HelpTip term="tier" /></TH>
     <TH onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}>
-      Score {sortDir === 'desc' ? '↓' : '↑'}
+      Score<HelpTip term="wiqs_score" /> {sortDir === 'desc' ? '↓' : '↑'}
     </TH>
-    <TH>P1</TH><TH>Reason</TH><TH>Action</TH>
+    <TH>P1<HelpTip term="p1" /></TH><TH>Reason</TH><TH>Action</TH>
   </>
 }
 function ConfHeaders({ sortDir, setSortDir }) {
   return <>
     <TH>Wine</TH><TH>Producer</TH><TH>Region</TH>
     <TH onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}>
-      Score {sortDir === 'desc' ? '↓' : '↑'}
+      Score<HelpTip term="wiqs_score" /> {sortDir === 'desc' ? '↓' : '↑'}
     </TH>
     <TH>Confidence</TH><TH>Action</TH>
   </>
 }
 function AnomalyHeaders({ sortDir, setSortDir }) {
   return <>
-    <TH>Wine</TH><TH>Producer</TH><TH>Current Tier</TH>
+    <TH>Wine</TH><TH>Producer</TH><TH>Current Tier<HelpTip term="tier" /></TH>
     <TH onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}>
-      Score {sortDir === 'desc' ? '↓' : '↑'}
+      Score<HelpTip term="wiqs_score" /> {sortDir === 'desc' ? '↓' : '↑'}
     </TH>
     <TH>Issue</TH><TH>Action</TH>
   </>

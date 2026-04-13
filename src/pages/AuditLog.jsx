@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { getAuditLog, getAuditTables } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
+import HelpTip from '../components/HelpTip'
 
 const PAGE_SIZE = 50
 const MAX_VALUE_CHARS = 40
@@ -294,7 +295,7 @@ export default function AuditLog() {
         padding: '16px 20px',
         display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 14,
       }}>
-        <FilterField label="Operator" minWidth={140}>
+        <FilterField label={<>Operator<HelpTip term="operator" /></>} minWidth={140}>
           <select value={filterOperator} onChange={e => setFilterOperator(e.target.value)}>
             {OPERATOR_OPTIONS.map(op => (
               <option key={op || 'all'} value={op}>{op || 'All operators'}</option>
@@ -373,12 +374,12 @@ export default function AuditLog() {
             <thead>
               <tr>
                 <TH>Time</TH>
-                <TH>Operator</TH>
+                <TH>Operator<HelpTip term="operator" /></TH>
                 <TH>Table</TH>
                 <TH>Record ID</TH>
                 <TH>Field</TH>
                 <TH>Old → New</TH>
-                <TH>Script</TH>
+                <TH>Script<HelpTip term="script" /></TH>
                 <TH>Note</TH>
               </tr>
             </thead>

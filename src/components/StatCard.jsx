@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import HelpTip from './HelpTip'
 
-export default function StatCard({ title, value, subtitle, accent = 'var(--gold)' }) {
+export default function StatCard({ title, value, subtitle, accent = 'var(--gold)', helpTerm }) {
   const [hovered, setHovered] = useState(false)
   return (
     <div
@@ -18,7 +19,7 @@ export default function StatCard({ title, value, subtitle, accent = 'var(--gold)
         fontSize: 10, fontWeight: 600, letterSpacing: '0.1em',
         textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 8,
       }}>
-        {title}
+        {title}{helpTerm && <HelpTip term={helpTerm} />}
       </div>
       <div style={{
         fontSize: 28, fontWeight: 700, color: accent, lineHeight: 1.1, marginBottom: 4,

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { getCatalogStats, getWIQSScores, batchRecompute, getRegions } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import Badge from '../components/Badge'
+import HelpTip from '../components/HelpTip'
 
 const LAST_RUN_KEY  = 'wie_annual_vintage_last_run'
 const LAST_YEAR_KEY = 'wie_annual_vintage_last_year'
@@ -105,7 +106,7 @@ function Step1({ year, setYear, scope, setScope, regionId, setRegionId, tier, se
 
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
-          Harvest Year
+          Harvest Year <HelpTip term="harvest_year" />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
@@ -129,7 +130,7 @@ function Step1({ year, setYear, scope, setScope, regionId, setRegionId, tier, se
 
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>
-          Scope
+          Scope <HelpTip term="scope" />
         </div>
         {[
           { value: 'all',    label: `All wines (${catalogStats?.total_families ?? '…'} families)`, recommended: true },
@@ -303,7 +304,7 @@ function Step3({ year, scope, regionId, tier, onComplete }) {
       {!result && !error && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '40px 0' }}>
           <LoadingSpinner size="lg" />
-          <div style={{ color: 'var(--text-dim)', fontSize: 14 }}>Running batch WIQS compute…</div>
+          <div style={{ color: 'var(--text-dim)', fontSize: 14 }}>Running batch WIQS compute… <HelpTip term="batch_recompute" /></div>
         </div>
       )}
 
@@ -430,7 +431,7 @@ function PriceDataQueue({ wines }) {
         }}
       >
         <span style={{ transform: open ? 'rotate(90deg)' : 'none', display: 'inline-block', transition: 'transform 150ms', fontSize: 12 }}>▶</span>
-        Price Data Outstanding
+        Price Data Outstanding <HelpTip term="price_data_outstanding" />
         <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-dim)', marginLeft: 4 }}>({lowConf.length} wines)</span>
       </button>
 

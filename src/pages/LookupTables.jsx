@@ -6,6 +6,7 @@ import {
   batchRecompute,
 } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
+import HelpTip from '../components/HelpTip'
 
 const CHANGE_LOG_KEY = 'wie_lookup_changes'
 const MAX_LOG = 10
@@ -380,7 +381,7 @@ function SubregionTab({ subregions, onUpdate }) {
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <TH onClick={() => toggleSort('subregion_name')}>Subregion{sortIndicator('subregion_name')}</TH>
                 <TH>Country</TH>
-                <TH onClick={() => toggleSort('quality_score')}>Quality Score (0–25){sortIndicator('quality_score')}</TH>
+                <TH onClick={() => toggleSort('quality_score')}>Quality Score (0–25) <HelpTip term="quality_score" />{sortIndicator('quality_score')}</TH>
                 <TH>Notes</TH>
                 <TH>Actions</TH>
               </tr>
@@ -631,7 +632,7 @@ function ProducerTab({ producers, onUpdate }) {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <TH>Producer</TH>
-                <TH>Prestige Score (0–20)</TH>
+                <TH>Prestige Score (0–20) <HelpTip term="prestige_score" /></TH>
                 <TH>Tier</TH>
                 <TH>Notes</TH>
                 <TH>Actions</TH>
@@ -815,7 +816,7 @@ function DenominationTab({ denominations }) {
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <TH>Denomination</TH>
                 <TH>Country</TH>
-                <TH>Tier Bonus</TH>
+                <TH>Tier Bonus <HelpTip term="tier_bonus" /></TH>
                 <TH>Notes</TH>
                 <TH>Actions</TH>
               </tr>
@@ -922,6 +923,9 @@ export default function LookupTables() {
             }}
           >
             {t.label}
+            {t.key === 'subregion' && <HelpTip term="subregion_quality" />}
+            {t.key === 'producer' && <HelpTip term="producer_prestige" />}
+            {t.key === 'denomination' && <HelpTip term="denomination_tiers" />}
           </button>
         ))}
       </div>

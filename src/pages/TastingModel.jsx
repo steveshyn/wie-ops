@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getTastingModelDashboard } from '../api/client'
 import StatCard from '../components/StatCard'
 import LoadingSpinner from '../components/LoadingSpinner'
+import HelpTip from '../components/HelpTip'
 import { fmtScore, fmtCount, fmtDate } from '../utils/formatters'
 
 const CLUSTER_COLORS = {
@@ -105,18 +106,18 @@ export default function TastingModel() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
         gap: 16,
       }}>
-        <StatCard title="Tasting Events" value={fmtCount(s.tasting_events_count)} />
-        <StatCard title="Rollup Wines" value={fmtCount(s.tasting_rollup_count)} />
+        <StatCard title="Tasting Events" value={fmtCount(s.tasting_events_count)} helpTerm="tasting_events" />
+        <StatCard title="Rollup Wines" value={fmtCount(s.tasting_rollup_count)} helpTerm="rollup_wines" />
         <StatCard title="Unresolved" value={fmtCount(s.unresolved_count)}
-          accent={s.unresolved_count > 0 ? 'var(--amber)' : 'var(--green-light)'} />
-        <StatCard title="Active Archetypes" value={fmtCount(s.archetype_count)} />
+          accent={s.unresolved_count > 0 ? 'var(--amber)' : 'var(--green-light)'} helpTerm="unresolved" />
+        <StatCard title="Active Archetypes" value={fmtCount(s.archetype_count)} helpTerm="active_archetypes" />
       </div>
 
       {/* ROW 2 -- Archetypes + Maturity/Quality */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
         {/* LEFT: Archetype Distribution */}
-        <Card title="Archetype Distribution">
+        <Card title={<>Archetype Distribution<HelpTip term="archetype" /></>}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {(data.archetype_distribution || []).map(a => (
               <div key={a.archetype_tag} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -150,7 +151,7 @@ export default function TastingModel() {
 
         {/* RIGHT: Maturity + Quality */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <Card title="Maturity Breakdown">
+          <Card title={<>Maturity Breakdown<HelpTip term="maturity" /></>}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {Object.entries(data.maturity_breakdown || {}).map(([key, count]) => (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -175,7 +176,7 @@ export default function TastingModel() {
             </div>
           </Card>
 
-          <Card title="Quality Bands">
+          <Card title={<>Quality Bands<HelpTip term="quality_bands" /></>}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {Object.entries(data.quality_band_breakdown || {}).map(([band, count]) => (
                 <span key={band} style={{

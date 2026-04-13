@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getLwinCoverage } from '../api/client'
 import StatCard from '../components/StatCard'
 import LoadingSpinner from '../components/LoadingSpinner'
+import HelpTip from '../components/HelpTip'
 import { fmtCount, fmtDate } from '../utils/formatters'
 
 const Card = ({ title, children, style = {} }) => (
@@ -46,7 +47,7 @@ function CoverageGauge({ pct }) {
         <div style={{ fontSize: 28, fontWeight: 700, color: gaugeColor, lineHeight: 1 }}>
           {pct}%
         </div>
-        <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>COVERAGE</div>
+        <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>COVERAGE <HelpTip term="lwin" /></div>
       </div>
     </div>
   )
@@ -106,10 +107,10 @@ export default function LwinCoverage() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
           gap: 16,
         }}>
-          <StatCard title="Matched" value={fmtCount(sm.lwin_matched)} accent="var(--green-light)" />
-          <StatCard title="Unmatched" value={fmtCount(sm.lwin_unmatched)} accent="var(--amber)" />
-          <StatCard title="Collision Held" value={fmtCount(sm.collision_held)} accent="var(--text-dim)" />
-          <StatCard title="Total Families" value={fmtCount(sm.total_active_families)} />
+          <StatCard title="Matched" value={fmtCount(sm.lwin_matched)} accent="var(--green-light)" helpTerm="lwin_matched" />
+          <StatCard title="Unmatched" value={fmtCount(sm.lwin_unmatched)} accent="var(--amber)" helpTerm="lwin_unmatched" />
+          <StatCard title="Collision Held" value={fmtCount(sm.collision_held)} accent="var(--text-dim)" helpTerm="collision_held" />
+          <StatCard title="Total Families" value={fmtCount(sm.total_active_families)} helpTerm="wine_families" />
         </div>
       </div>
 

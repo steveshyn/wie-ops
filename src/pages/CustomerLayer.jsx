@@ -9,6 +9,7 @@ import {
   getMatchScore,
 } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
+import HelpTip from '../components/HelpTip'
 
 const DIM_ORDER = [
   'body', 'acidity', 'tannin', 'sweetness',
@@ -276,7 +277,7 @@ export default function CustomerLayer() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* Archetype card */}
-            <Card title="Archetype">
+            <Card title={<>Archetype<HelpTip term="archetype" /></>}>
               <div style={{
                 fontSize: 28, fontWeight: 600, color: 'var(--gold)',
                 fontFamily: 'var(--font-serif)', fontStyle: 'italic',
@@ -314,7 +315,7 @@ export default function CustomerLayer() {
             </Card>
 
             {/* Radar chart */}
-            <Card title="Palate Dimensions">
+            <Card title={<>Palate Dimensions<HelpTip term="palate_dimensions" /></>}>
               <ResponsiveContainer width="100%" height={320}>
                 <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                   <PolarGrid stroke="#333" />
@@ -351,7 +352,7 @@ export default function CustomerLayer() {
 
             {/* Influence sensitivity */}
             {profile.influence_sensitivity && (
-              <Card title="Influence Sensitivity">
+              <Card title={<>Influence Sensitivity<HelpTip term="influence_sensitivity" /></>}>
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
                   marginBottom: 14,
@@ -478,7 +479,7 @@ export default function CustomerLayer() {
                         <TH>Producer</TH>
                         <TH>Vintage</TH>
                         <TH style={{ textAlign: 'right' }}>WIQS</TH>
-                        <TH>Match</TH>
+                        <TH>Match<HelpTip term="match_score" /></TH>
                         <TH style={{ paddingRight: 24 }}>Alignment</TH>
                       </tr>
                     </thead>
@@ -537,7 +538,7 @@ export default function CustomerLayer() {
             </Card>
 
             {/* Match score sub-panel */}
-            <Card title="Test Match Score">
+            <Card title={<>Test Match Score<HelpTip term="match_score" /></>}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 16 }}>
                 <div style={{ minWidth: 140 }}>
                   <label style={{

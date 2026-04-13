@@ -12,6 +12,7 @@ import Badge from '../components/Badge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { TIER_COLORS, scoreToColor } from '../utils/tierColors'
 import { fmtScore, fmtPct, fmtDate, capitalize } from '../utils/formatters'
+import HelpTip from '../components/HelpTip'
 
 const PAGE_SIZE  = 50
 const TIER_ORDER = ['exceptional', 'distinguished', 'quality', 'standard', 'basic']
@@ -385,15 +386,15 @@ export default function WIQSScores() {
                     { key: null,              label: 'Producer', w: 130 },
                     { key: null,              label: 'Region',   w: 110 },
                     { key: null,              label: 'Country',  w: 80  },
-                    { key: null,              label: 'Tier',     w: 110 },
-                    { key: 'wiqs_score',      label: 'Score',   w: 62  },
-                    { key: 'wiqs_confidence', label: 'Conf',    w: 52  },
-                    { key: null, label: 'P1', w: 40 },
-                    { key: null, label: 'P2', w: 40 },
-                    { key: null, label: 'P3', w: 40 },
-                    { key: null, label: 'P4', w: 40 },
-                    { key: null, label: 'P5', w: 40 },
-                    { key: null,              label: 'QPR',      w: 100 },
+                    { key: null,              label: <>Tier<HelpTip term="tier" /></>,     w: 110 },
+                    { key: 'wiqs_score',      label: <>Score<HelpTip term="wiqs_score" /></>,   w: 62  },
+                    { key: 'wiqs_confidence', label: <>Conf<HelpTip term="confidence" /></>,    w: 52  },
+                    { key: null, label: <>P1<HelpTip term="p1" /></>, w: 40 },
+                    { key: null, label: <>P2<HelpTip term="p2" /></>, w: 40 },
+                    { key: null, label: <>P3<HelpTip term="p3" /></>, w: 40 },
+                    { key: null, label: <>P4<HelpTip term="p4" /></>, w: 40 },
+                    { key: null, label: <>P5<HelpTip term="p5" /></>, w: 40 },
+                    { key: null,              label: <>QPR<HelpTip term="qpr" /></>,      w: 100 },
                     { key: null,              label: 'Computed', w: 90  },
                   ].map(({ key, label, w }) => (
                     <th key={label} onClick={key ? () => handleSort(key) : undefined}
@@ -678,11 +679,11 @@ export default function WIQSScores() {
                             </div>
                             <div style={{ marginBottom: 18 }}><Badge tier={latestHistory.wiqs_tier} /></div>
 
-                            <PillarBar label="P1  Site & Terroir"     score={latestHistory.p1_site_terroir}       max={25} />
-                            <PillarBar label="P2  Producer Prestige"  score={latestHistory.p2_producer_prestige}  max={20} />
-                            <PillarBar label="P3  Classification"     score={latestHistory.p3_classification}     max={20} />
-                            <PillarBar label="P4  Market Validation"  score={latestHistory.p4_market_validation}  max={20} />
-                            <PillarBar label="P5  Sensory Complexity" score={latestHistory.p5_sensory_complexity} max={15} />
+                            <PillarBar label={<>P1  Site & Terroir<HelpTip term="p1" /></>}     score={latestHistory.p1_site_terroir}       max={25} />
+                            <PillarBar label={<>P2  Producer Prestige<HelpTip term="p2" /></>}  score={latestHistory.p2_producer_prestige}  max={20} />
+                            <PillarBar label={<>P3  Classification<HelpTip term="p3" /></>}     score={latestHistory.p3_classification}     max={20} />
+                            <PillarBar label={<>P4  Market Validation<HelpTip term="p4" /></>}  score={latestHistory.p4_market_validation}  max={20} />
+                            <PillarBar label={<>P5  Sensory Complexity<HelpTip term="p5" /></>} score={latestHistory.p5_sensory_complexity} max={15} />
 
                             <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                               {latestHistory.commercial_inflation && latestHistory.commercial_inflation !== 'none' && (

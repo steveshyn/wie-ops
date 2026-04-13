@@ -7,6 +7,7 @@ import {
 } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
+import HelpTip from '../components/HelpTip'
 
 const PAGE_SIZE = 50
 
@@ -320,10 +321,10 @@ export default function CatalogBrowser() {
                 <TH style={{ paddingLeft: 24 }}>Wine</TH>
                 <TH>Producer</TH>
                 <TH>Country / Region</TH>
-                <TH style={{ textAlign: 'right' }}>WIQS</TH>
-                <TH>Tier</TH>
-                <TH style={{ textAlign: 'right' }}>Vintages</TH>
-                <TH>LWIN</TH>
+                <TH style={{ textAlign: 'right' }}>WIQS <HelpTip term="wiqs_score" /></TH>
+                <TH>Tier <HelpTip term="tier" /></TH>
+                <TH style={{ textAlign: 'right' }}>Vintages <HelpTip term="vintages" /></TH>
+                <TH>LWIN <HelpTip term="lwin7" /></TH>
                 <TH style={{ paddingRight: 24 }}>Actions</TH>
               </tr>
             </thead>
@@ -661,7 +662,12 @@ function DetailsTab({ detail, onSaved }) {
       <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', rowGap: 8, columnGap: 12 }}>
         {EDITABLE_FIELDS.map(field => (
           <Fragment key={field}>
-            <div style={fieldLabelStyle}>{field}</div>
+            <div style={fieldLabelStyle}>
+              {field}
+              {field === 'production_tier' && <HelpTip term="production_tier" />}
+              {field === 'lwin7' && <HelpTip term="lwin7" />}
+              {field === 'wine_prestige_score' && <HelpTip term="prestige_score" />}
+            </div>
             <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text)' }}>
               {editing === field ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -711,7 +717,7 @@ function DetailsTab({ detail, onSaved }) {
         <div>Created: {detail.family.created_at}</div>
         {detail.prestige && (
           <div style={{ marginTop: 6 }}>
-            Prestige: <span style={{ color: 'var(--text)' }}>
+            Prestige <HelpTip term="prestige_score" />: <span style={{ color: 'var(--text)' }}>
               {detail.prestige.prestige_score}
             </span> ({detail.prestige.tier}){detail.prestige.manually_set && <span style={{ color: 'var(--gold)' }}> · manual</span>}
           </div>

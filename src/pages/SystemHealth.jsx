@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import { TIER_COLORS, scoreToColor } from '../utils/tierColors'
 import { fmtScore, fmtPct, fmtCount } from '../utils/formatters'
 import AskWine from '../components/AskWine'
+import HelpTip from '../components/HelpTip'
 
 const TIER_ORDER = ['exceptional', 'distinguished', 'quality', 'standard', 'basic']
 
@@ -166,30 +167,36 @@ export default function SystemHealth() {
             <StatCard
               title="Wine Families"
               value={fmtCount(stats.total_families)}
+              helpTerm="wine_families"
             />
             <StatCard
               title="Vintages"
               value={fmtCount(stats.total_vintages)}
+              helpTerm="vintages"
             />
             <StatCard
               title="Vectors"
               value={fmtCount(stats.total_vectors)}
               subtitle={`${((stats.total_vectors / (stats.total_vintages || 1)) * 100).toFixed(0)}% of vintages`}
+              helpTerm="vectors"
             />
             <StatCard
               title="WIQS Scored"
               value={fmtCount(stats.wiqs_scored_count)}
               subtitle={`${fmtCount(stats.wiqs_unscored_count)} unscored`}
+              helpTerm="wiqs_scored"
             />
             <StatCard
               title="Avg WIQS Score"
               value={fmtScore(stats.avg_wiqs_score)}
               accent={scoreToColor(stats.avg_wiqs_score).text}
+              helpTerm="wiqs_score"
             />
             <StatCard
               title="Avg Confidence"
               value={fmtPct(stats.avg_wiqs_confidence)}
               accent={confAccent()}
+              helpTerm="confidence"
             />
           </div>
 
@@ -205,7 +212,7 @@ export default function SystemHealth() {
                 fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
                 textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 20,
               }}>
-                WIQS Tier Distribution
+                WIQS Tier Distribution<HelpTip term="scoring_distribution" />
               </div>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={tierData} layout="vertical" margin={{ left: 0, right: 40, top: 0, bottom: 0 }}>
@@ -239,24 +246,24 @@ export default function SystemHealth() {
                 fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
                 textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 20,
               }}>
-                Data Quality Summary
+                Data Quality Summary<HelpTip term="tier_anomalies" />
               </div>
 
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <QualityRow
-                  label="P1 Misses"
+                  label={<>P1 Misses<HelpTip term="p1_misses" /></>}
                   value={issues?.p1_misses?.length ?? 0}
                   warn={(issues?.p1_misses?.length ?? 0) > 0}
                   warnLevel="amber"
                 />
                 <QualityRow
-                  label="Low Confidence"
+                  label={<>Low Confidence<HelpTip term="low_confidence" /></>}
                   value={issues?.low_confidence?.length ?? 0}
                   warn={(issues?.low_confidence?.length ?? 0) > 0}
                   warnLevel="amber"
                 />
                 <QualityRow
-                  label="Tier Anomalies"
+                  label={<>Tier Anomalies<HelpTip term="tier_anomalies" /></>}
                   value={anomalyCount}
                   warn={anomalyCount > 0}
                   warnLevel="red"

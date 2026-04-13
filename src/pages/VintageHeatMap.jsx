@@ -9,6 +9,7 @@ import Badge from '../components/Badge'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { scoreToColor } from '../utils/tierColors'
 import { fmtScore } from '../utils/formatters'
+import HelpTip from '../components/HelpTip'
 
 // ── Color scale ───────────────────────────────────────────────────────────────
 function hexToRgb(hex) {
@@ -85,9 +86,9 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 const METRIC_LABELS = {
-  avg_score: 'Avg WIQS Score',
-  avg_p1:    'P1 Terroir',
-  avg_p5:    'P5 Complexity',
+  avg_score: <>Avg WIQS Score<HelpTip term="wiqs_score" /></>,
+  avg_p1:    <>P1 Terroir<HelpTip term="p1" /></>,
+  avg_p5:    <>P5 Complexity<HelpTip term="p5" /></>,
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -550,14 +551,14 @@ export default function VintageHeatMap() {
               border: '1px solid #222', borderRadius: 8,
             }}>
               <div>
-                <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>Avg Score</div>
+                <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>Avg Score<HelpTip term="wiqs_score" /></div>
                 <div style={{ fontSize: 24, fontWeight: 800, color: heatColor(selectedCell.avg_score) }}>
                   {selectedCell.avg_score?.toFixed(1)}
                 </div>
               </div>
               {selectedCell.avg_p1 != null && (
                 <div>
-                  <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>P1 Terroir</div>
+                  <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>P1 Terroir<HelpTip term="p1" /></div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#c9a84c' }}>
                     {selectedCell.avg_p1?.toFixed(1)}
                   </div>
@@ -565,7 +566,7 @@ export default function VintageHeatMap() {
               )}
               {selectedCell.avg_p5 != null && (
                 <div>
-                  <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>P5 Complexity</div>
+                  <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>P5 Complexity<HelpTip term="p5" /></div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#c9a84c' }}>
                     {selectedCell.avg_p5?.toFixed(1)}
                   </div>
