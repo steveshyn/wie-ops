@@ -508,20 +508,21 @@ export default function VintageHeatMap() {
 
       {/* ── Detail drawer ─────────────────────────────────────────────────── */}
       {drawerOpen && selectedCell && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 400,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex', justifyContent: 'flex-end',
-        }}
-          onClick={e => e.target === e.currentTarget && setDrawerOpen(false)}
-        >
+        <>
+          <div
+            onClick={() => setDrawerOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+              zIndex: 400, animation: 'fadeIn 150ms',
+            }}
+          />
           <div style={{
-            width: 420, background: '#141414',
-            borderLeft: '1px solid #2a2a2a',
-            padding: 24, overflowY: 'auto',
-            animation: 'slideIn 0.2s ease',
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 420,
+            background: '#141414', borderLeft: '2px solid #c9a84c',
+            zIndex: 401, overflowY: 'auto',
+            padding: 24,
+            animation: 'slideInRight 200ms',
           }}>
-            <style>{`@keyframes slideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }`}</style>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
               <div>
@@ -617,7 +618,7 @@ export default function VintageHeatMap() {
               </div>
             )}
           </div>
-        </div>
+        </>
       )}
     </div>
   )

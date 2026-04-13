@@ -381,22 +381,22 @@ export default function WIQSScores() {
               <thead>
                 <tr style={{ background: '#161616', borderBottom: '1px solid #222' }}>
                   {[
-                    { key: 'wine_name',       label: 'Wine',    w: 180 },
-                    { key: null,              label: 'Producer', w: 130 },
-                    { key: null,              label: 'Region',   w: 110 },
-                    { key: null,              label: 'Country',  w: 80  },
-                    { key: null,              label: <>Tier<HelpTip term="tier" /></>,     w: 110 },
-                    { key: 'wiqs_score',      label: <>Score<HelpTip term="wiqs_score" /></>,   w: 62  },
-                    { key: 'wiqs_confidence', label: <>Conf<HelpTip term="confidence" /></>,    w: 52  },
-                    { key: null, label: <>P1<HelpTip term="p1" /></>, w: 40 },
-                    { key: null, label: <>P2<HelpTip term="p2" /></>, w: 40 },
-                    { key: null, label: <>P3<HelpTip term="p3" /></>, w: 40 },
-                    { key: null, label: <>P4<HelpTip term="p4" /></>, w: 40 },
-                    { key: null, label: <>P5<HelpTip term="p5" /></>, w: 40 },
-                    { key: null,              label: <>QPR<HelpTip term="qpr" /></>,      w: 100 },
-                    { key: null,              label: 'Computed', w: 90  },
-                  ].map(({ key, label, w }) => (
-                    <th key={label} onClick={key ? () => handleSort(key) : undefined}
+                    { id: 'wine',     key: 'wine_name',       label: 'Wine',    w: 180 },
+                    { id: 'producer', key: null,              label: 'Producer', w: 130 },
+                    { id: 'region',   key: null,              label: 'Region',   w: 110 },
+                    { id: 'country',  key: null,              label: 'Country',  w: 80  },
+                    { id: 'tier',     key: null,              label: <>Tier<HelpTip term="tier" /></>,     w: 110 },
+                    { id: 'score',    key: 'wiqs_score',      label: <>Score<HelpTip term="wiqs_score" /></>,   w: 62  },
+                    { id: 'conf',     key: 'wiqs_confidence', label: <>Conf<HelpTip term="confidence" /></>,    w: 52  },
+                    { id: 'p1', key: null, label: <>P1<HelpTip term="p1" /></>, w: 40 },
+                    { id: 'p2', key: null, label: <>P2<HelpTip term="p2" /></>, w: 40 },
+                    { id: 'p3', key: null, label: <>P3<HelpTip term="p3" /></>, w: 40 },
+                    { id: 'p4', key: null, label: <>P4<HelpTip term="p4" /></>, w: 40 },
+                    { id: 'p5', key: null, label: <>P5<HelpTip term="p5" /></>, w: 40 },
+                    { id: 'qpr',      key: null,              label: <>QPR<HelpTip term="qpr" /></>,      w: 100 },
+                    { id: 'computed', key: null,              label: 'Computed', w: 90  },
+                  ].map(({ id, key, label, w }) => (
+                    <th key={id} onClick={key ? () => handleSort(key) : undefined}
                       style={{
                         padding: '10px 12px', textAlign: 'left',
                         color: '#666', fontWeight: 600, fontSize: 10,

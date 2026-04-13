@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { GLOSSARY } from '../utils/glossary'
 
 export default function HelpTip({ term, text }) {
   const definition = text || GLOSSARY[term]
   const [show, setShow] = useState(false)
-  const [above, setAbove] = useState(true)
+  const [pos, setPos] = useState({ x: 0, y: 0, above: true })
   const iconRef = useRef(null)
   const timer = useRef(null)
 
@@ -12,7 +13,12 @@ export default function HelpTip({ term, text }) {
     timer.current = setTimeout(() => {
       if (iconRef.current) {
         const rect = iconRef.current.getBoundingClientRect()
-        setAbove(rect.top > 120)
+        const above = rect.top > 160
+        setPos({
+          x: rect.left + rect.width / 2,
+          y: above ? rect.top - 8 : rect.bottom + 8,
+          above,
+        })
       }
       setShow(true)
     }, 200)
@@ -59,16 +65,16 @@ export default function HelpTip({ term, text }) {
         i
       </span>
 
-      {show && (
+      {show && createPortal(
         <span
           role="tooltip"
           style={{
-            position: 'absolute',
-            left: '50%',
+            position: 'fixed',
+            left: pos.x,
             transform: 'translateX(-50%)',
-            ...(above
-              ? { bottom: 'calc(100% + 8px)' }
-              : { top: 'calc(100% + 8px)' }),
+            ...(pos.above
+              ? { top: pos.y, transform: 'translate(-50%, -100%)' }
+              : { top: pos.y }),
             width: 260,
             padding: '10px 12px',
             background: '#1a1a1a',
@@ -90,13 +96,14 @@ export default function HelpTip({ term, text }) {
           <span style={{
             position: 'absolute',
             left: '50%', transform: 'translateX(-50%)',
-            ...(above
+            ...(pos.above
               ? { bottom: -5, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #3a3527' }
               : { top: -5, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '5px solid #3a3527' }),
             width: 0, height: 0,
           }} />
           {definition}
-        </span>
+        </span>,
+        document.body
       )}
     </span>
   )
