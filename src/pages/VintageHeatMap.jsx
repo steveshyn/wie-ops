@@ -122,7 +122,8 @@ export default function VintageHeatMap() {
   }, [rawData])
 
   const years = useMemo(() => {
-    const s = new Set(rawData.map(d => d.vintage_year))
+    const currentYear = new Date().getFullYear()
+    const s = new Set(rawData.map(d => d.vintage_year).filter(y => y <= currentYear + 1))
     return Array.from(s).sort()
   }, [rawData])
 
@@ -392,7 +393,7 @@ export default function VintageHeatMap() {
         </p>
       </div>
 
-      {/* Controls */}
+      {/* Controls + Legend */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 12,
         alignItems: 'center', marginBottom: 20,
@@ -432,9 +433,81 @@ export default function VintageHeatMap() {
             style={{ accentColor: '#c9a84c', cursor: 'pointer' }} />
         </div>
 
-        <span style={{ marginLeft: 'auto', fontSize: 11, color: '#444' }}>
-          {allRegions.length} regions · {years.length} years
-        </span>
+        {/* Legend (inline) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+          <div style={{ display: 'flex', height: 8, width: 100, borderRadius: 2, overflow: 'hidden' }}>
+            {Array.from({ length: 100 }, (_, i) => (
+              <div key={i} style={{ flex: 1, background: heatColor(i) }} />
+            ))}
+          </div>
+          {[
+            { score: 40, label: '40' },
+            { score: 55, label: '55' },
+            { score: 70, label: '70' },
+            { score: 85, label: '85+' },
+          ].map(({ score, label }) => (
+            <span key={score} style={{
+              fontSize: 8, padding: '1px 4px', borderRadius: 6,
+              background: heatColor(score), color: textColorForBg(score),
+            }}>
+              {label}
+            </span>
+          ))}
+          <span style={{ fontSize: 10, color: '#444' }}>
+            {allRegions.length} regions · {years.length} yrs
+          </span>
+        </div>
+      </div>
+
+      {/* ── Analysis panels (overview first, detail below) ────────────────── */}
+      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 20 }}>
+
+        {/* Best Vintages */}
+        <div style={{
+          flex: '1 1 340px', background: '#111',
+          border: '1px solid #222', borderRadius: 12, padding: '18px 20px',
+        }}>
+          <div style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>
+            Best Vintages Overall
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={vintageChartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+              <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#555' }} />
+              <YAxis domain={[40, 80]} tick={{ fontSize: 9, fill: '#555' }} />
+              <Tooltip content={<ChartTooltip />} />
+              <Bar dataKey="score" radius={[3, 3, 0, 0]}>
+                {vintageChartData.map((d, i) => (
+                  <Cell key={i} fill={heatColor(d.score)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Strongest Regions */}
+        <div style={{
+          flex: '1 1 340px', background: '#111',
+          border: '1px solid #222', borderRadius: 12, padding: '18px 20px',
+        }}>
+          <div style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>
+            Strongest Regions
+          </div>
+          <ResponsiveContainer width="100%" height={Math.max(200, regionChartData.length * 22)}>
+            <BarChart data={regionChartData} layout="vertical"
+              margin={{ top: 0, right: 40, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" horizontal={false} />
+              <XAxis type="number" domain={[40, 90]} tick={{ fontSize: 9, fill: '#555' }} />
+              <YAxis type="category" dataKey="region" tick={{ fontSize: 10, fill: '#777' }} width={110} />
+              <Tooltip content={<ChartTooltip />} />
+              <Bar dataKey="score" radius={[0, 3, 3, 0]}>
+                {regionChartData.map((d, i) => (
+                  <Cell key={i} fill={heatColor(d.score)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* ── Heat map ───────────────────────────────────────────────────────── */}
@@ -562,83 +635,6 @@ export default function VintageHeatMap() {
         </div>
       )}
 
-      {/* ── Legend ─────────────────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        marginBottom: 28, flexWrap: 'wrap',
-      }}>
-        <span style={{ fontSize: 11, color: '#555' }}>Score scale:</span>
-        <div style={{ display: 'flex', height: 12, width: 200, borderRadius: 3, overflow: 'hidden' }}>
-          {Array.from({ length: 100 }, (_, i) => (
-            <div key={i} style={{ flex: 1, background: heatColor(i) }} />
-          ))}
-        </div>
-        {[
-          { score: 0,  label: '0 Basic' },
-          { score: 40, label: '40 Standard' },
-          { score: 55, label: '55 Quality' },
-          { score: 70, label: '70 Distinguished' },
-          { score: 85, label: '85 Exceptional' },
-        ].map(({ score, label }) => (
-          <span key={score} style={{
-            fontSize: 9, padding: '2px 6px', borderRadius: 10,
-            background: heatColor(score), color: textColorForBg(score),
-          }}>
-            {label}
-          </span>
-        ))}
-      </div>
-
-      {/* ── Analysis panels ──────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 20 }}>
-
-        {/* Best Vintages */}
-        <div style={{
-          flex: '1 1 340px', background: '#111',
-          border: '1px solid #222', borderRadius: 12, padding: '18px 20px',
-        }}>
-          <div style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>
-            Best Vintages Overall
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={vintageChartData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
-              <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#555' }} />
-              <YAxis domain={[40, 80]} tick={{ fontSize: 9, fill: '#555' }} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="score" radius={[3, 3, 0, 0]}>
-                {vintageChartData.map((d, i) => (
-                  <Cell key={i} fill={heatColor(d.score)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Strongest Regions */}
-        <div style={{
-          flex: '1 1 340px', background: '#111',
-          border: '1px solid #222', borderRadius: 12, padding: '18px 20px',
-        }}>
-          <div style={{ fontSize: 11, color: '#666', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>
-            Strongest Regions
-          </div>
-          <ResponsiveContainer width="100%" height={Math.max(200, regionChartData.length * 22)}>
-            <BarChart data={regionChartData} layout="vertical"
-              margin={{ top: 0, right: 40, left: 10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" horizontal={false} />
-              <XAxis type="number" domain={[40, 90]} tick={{ fontSize: 9, fill: '#555' }} />
-              <YAxis type="category" dataKey="region" tick={{ fontSize: 10, fill: '#777' }} width={110} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="score" radius={[0, 3, 3, 0]}>
-                {regionChartData.map((d, i) => (
-                  <Cell key={i} fill={heatColor(d.score)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
       {/* ── Detail drawer ─────────────────────────────────────────────────── */}
       {drawerOpen && selectedCell && (
