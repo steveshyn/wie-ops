@@ -205,12 +205,11 @@ export default function WIQSScores() {
     if (tierFilter    !== 'all' && w.wiqs_tier !== tierFilter)   return false
     if (countryFilter !== 'all' && w.country   !== countryFilter) return false
     if (search) {
-      const q = search.toLowerCase()
-      return (
-        (w.wine_name     || '').toLowerCase().includes(q) ||
-        (w.producer_name || '').toLowerCase().includes(q) ||
-        (w.region_name   || '').toLowerCase().includes(q)
-      )
+      const q = search.trim().toLowerCase()
+      if (!q) return true
+      const hay = [w.wine_name, w.producer_name, w.region_name, w.country]
+        .filter(Boolean).join(' ').toLowerCase()
+      return hay.includes(q)
     }
     return true
   }).sort((a, b) => {

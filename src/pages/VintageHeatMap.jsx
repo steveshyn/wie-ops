@@ -200,7 +200,7 @@ export default function VintageHeatMap() {
   const drawerWines = useMemo(() => {
     if (!selectedCell) return []
     return allWines
-      .filter(w => w.region_name === selectedCell.region && w.vintage_year === selectedCell.year)
+      .filter(w => w.region_name === selectedCell.region)
       .sort((a, b) => (b.wiqs_score ?? 0) - (a.wiqs_score ?? 0))
   }, [selectedCell, allWines])
 
