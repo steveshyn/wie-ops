@@ -241,3 +241,21 @@ export const askWine = (question, format = 'table') =>
     method: 'POST',
     body: JSON.stringify({ question, format }),
   })
+
+// Domain 04 — Pipeline Operations
+export const getPipelines = () => apiFetch('/ops/pipelines')
+export const getPipelineHistory = (pipelineId) =>
+  apiFetch(`/ops/pipelines/${encodeURIComponent(pipelineId)}/history`)
+
+// Domain 05 — Data Quality Monitor
+export const getDataQualitySummary = () => apiFetch('/ops/data-quality/summary')
+export const getDataQualityWines = (params = {}) => {
+  const sp = new URLSearchParams()
+  if (params.status)    sp.set('status',    params.status)
+  if (params.min_score) sp.set('min_score', params.min_score)
+  if (params.max_score) sp.set('max_score', params.max_score)
+  if (params.country)   sp.set('country',   params.country)
+  sp.set('limit',  String(params.limit  ?? 50))
+  sp.set('offset', String(params.offset ?? 0))
+  return apiFetch(`/ops/data-quality/wines?${sp.toString()}`)
+}

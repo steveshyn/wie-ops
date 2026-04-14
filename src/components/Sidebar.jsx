@@ -121,6 +121,23 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    to: '/pipelines', label: 'Pipeline Ops',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+      </svg>
+    ),
+  },
+  {
+    to: '/dq-monitor', label: 'DQ Monitor',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M9 12l2 2 4-4"/>
+        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+      </svg>
+    ),
+  },
 ]
 
 export default function Sidebar({ onLogout }) {

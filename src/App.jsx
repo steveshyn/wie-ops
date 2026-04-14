@@ -14,7 +14,9 @@ import CatalogBrowser  from './pages/CatalogBrowser'
 import HealthDashboard from './pages/HealthDashboard'
 import OverrideQueue   from './pages/OverrideQueue'
 import TastingModel    from './pages/TastingModel'
-import LwinCoverage    from './pages/LwinCoverage'
+import LwinCoverage         from './pages/LwinCoverage'
+import PipelineOperations   from './pages/PipelineOperations'
+import DataQualityMonitor   from './pages/DataQualityMonitor'
 
 function ProtectedRoute({ title, children }) {
   const { isAuthed, logout } = useAuth()
@@ -90,6 +92,16 @@ export default function App() {
         <Route path="/lwin" element={
           <ProtectedRoute title="LWIN Coverage">
             <LwinCoverage />
+          </ProtectedRoute>
+        } />
+        <Route path="/pipelines" element={
+          <ProtectedRoute title="Pipeline Operations">
+            <PipelineOperations />
+          </ProtectedRoute>
+        } />
+        <Route path="/dq-monitor" element={
+          <ProtectedRoute title="Data Quality Monitor">
+            <DataQualityMonitor />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
