@@ -25,6 +25,7 @@ async function apiFetch(path, options = {}) {
 
 // Health
 export const getHealth = () => apiFetch('/health')
+export const getOpsHealth = () => apiFetch('/ops/health')
 
 // Catalog
 export const getCatalogStats  = () => apiFetch('/ops/catalog/stats')

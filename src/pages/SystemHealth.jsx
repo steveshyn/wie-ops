@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
 } from 'recharts'
-import { getHealth, getCatalogStats, getQualityIssues } from '../api/client'
+import { getHealth, getOpsHealth, getCatalogStats, getQualityIssues } from '../api/client'
 import StatCard      from '../components/StatCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { TIER_COLORS, scoreToColor } from '../utils/tierColors'
@@ -18,6 +18,7 @@ export default function SystemHealth() {
   const [health,     setHealth]     = useState(null)
   const [stats,      setStats]      = useState(null)
   const [issues,     setIssues]     = useState(null)
+  const [opsHealth,  setOpsHealth]  = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState(null)
   const [apiMs,      setApiMs]      = useState(null)
@@ -29,16 +30,18 @@ export default function SystemHealth() {
     setError(null)
     const t0 = Date.now()
     try {
-      const [h, s, q] = await Promise.all([
+      const [h, s, q, oh] = await Promise.all([
         getHealth(),
         getCatalogStats(),
         getQualityIssues().catch(() => ({ p1_misses: [], low_confidence: [], tier_anomalies: [] })),
+        getOpsHealth().catch(() => null),
       ])
       setApiMs(Date.now() - t0)
       setApiOnline(true)
       setHealth(h)
       setStats(s)
       setIssues(q)
+      setOpsHealth(oh)
     } catch (err) {
       setApiOnline(false)
       setError(err.message)
@@ -294,8 +297,182 @@ export default function SystemHealth() {
         </>
       )}
 
+      {/* Extended Diagnostics */}
+      {opsHealth && <ExtendedDiagnostics data={opsHealth} />}
+
       {/* ASK WINE */}
       <AskWine />
+    </div>
+  )
+}
+
+function ExtendedDiagnostics({ data }) {
+  const rt = data.response_times
+  const pool = data.db_pool
+  const crons = data.cron_jobs || []
+  const proc = data.process
+
+  const dbColor = rt?.db_status === 'healthy' ? 'var(--green-light)'
+    : rt?.db_status === 'slow' ? 'var(--amber)' : 'var(--red)'
+
+  const CRON_STATUS = {
+    healthy:   { color: '#16a34a', label: 'Healthy' },
+    overdue:   { color: '#f59e0b', label: 'Overdue' },
+    never_run: { color: '#dc2626', label: 'Never Run' },
+  }
+
+  function stuckBg(n) {
+    if (n > 5) return 'rgba(220,38,38,0.15)'
+    if (n > 0) return 'rgba(245,158,11,0.15)'
+    return undefined
+  }
+
+  return (
+    <div>
+      {/* Section header */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: 'var(--text-dim)',
+        }}>
+          Extended Diagnostics
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 2 }}>
+          Response times &middot; DB pool &middot; Cron health &middot; Process state
+        </div>
+      </div>
+
+      {/* Panel A + B row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        {/* Panel A — Response Times */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 8, padding: '20px 24px',
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
+            textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 16,
+          }}>
+            Response Times
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 24 }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 4 }}>DB Query</div>
+              <span style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 700, color: dbColor }}>
+                {rt?.db_query_ms ?? '\u2014'}ms
+              </span>
+            </div>
+            <span style={{
+              fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+              color: dbColor, background: `${dbColor}22`,
+              padding: '2px 8px', borderRadius: 3,
+            }}>
+              {rt?.db_status ?? '\u2014'}
+            </span>
+          </div>
+        </div>
+
+        {/* Panel B — DB Connection Pool */}
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 8, padding: '20px 24px',
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
+            textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 16,
+          }}>
+            DB Connection Pool
+          </div>
+          <div style={{ display: 'flex', gap: 16 }}>
+            {[
+              { label: 'Total',  val: pool?.total },
+              { label: 'Active', val: pool?.active },
+              { label: 'Idle',   val: pool?.idle },
+              { label: 'Stuck',  val: pool?.idle_in_transaction, bg: stuckBg(pool?.idle_in_transaction || 0) },
+            ].map(s => (
+              <div key={s.label} style={{
+                flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 4,
+                background: s.bg || undefined,
+              }}>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>
+                  {s.val ?? '\u2014'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Panel C — Cron Jobs */}
+      <div style={{
+        background: 'var(--bg-card)', border: '1px solid var(--border)',
+        borderRadius: 8, padding: '20px 24px', marginBottom: 16,
+      }}>
+        <div style={{
+          fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 16,
+        }}>
+          Cron Jobs
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ color: 'var(--text-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+              <th style={{ padding: '8px 12px' }}>Name</th>
+              <th style={{ padding: '8px 12px' }}>Schedule</th>
+              <th style={{ padding: '8px 12px' }}>Last Run</th>
+              <th style={{ padding: '8px 12px' }}>Hours Ago</th>
+              <th style={{ padding: '8px 12px' }}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {crons.map(c => {
+              const s = CRON_STATUS[c.status] || CRON_STATUS.never_run
+              return (
+                <tr key={c.name} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '8px 12px', fontWeight: 500 }}>{c.name}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--text-dim)' }}>{c.schedule}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12, color: 'var(--text-dim)' }}>
+                    {c.last_run ? new Date(c.last_run).toLocaleString() : '\u2014'}
+                  </td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>
+                    {c.hours_since_run != null ? `${c.hours_since_run}h` : '\u2014'}
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}>
+                      <span style={{
+                        width: 8, height: 8, borderRadius: '50%', background: s.color,
+                        boxShadow: c.status === 'healthy' ? `0 0 6px ${s.color}` : undefined,
+                      }} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: s.color }}>{s.label}</span>
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Panel D — Process Status */}
+      {proc?.cold_start_detected ? (
+        <div style={{
+          background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+          borderRadius: 6, padding: '12px 16px', fontSize: 12, color: '#f59e0b',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ fontSize: 16 }}>{'\u26A0\uFE0F'}</span>
+          <span>Cold start detected &mdash; first requests may be slower than normal.
+            Uptime: {proc.uptime_seconds}s</span>
+        </div>
+      ) : (
+        <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+          Process uptime: {proc?.uptime_seconds != null ? `${proc.uptime_seconds}s` : '\u2014'}
+          {proc?.status === 'stable' && ' \u00b7 stable'}
+        </div>
+      )}
     </div>
   )
 }

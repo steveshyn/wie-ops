@@ -103,9 +103,91 @@ function ProtectedTiers({ data }) {
   )
 }
 
+function KnownIssueCard({ issue }) {
+  const [expanded, setExpanded] = useState(false)
+  const sevColors = { high: '#dc2626', medium: '#f59e0b', low: '#555' }
+  const hasWines = issue.wines && issue.wines.length > 0
+
+  return (
+    <div style={{
+      background: 'var(--bg-card)', border: '1px solid var(--border)',
+      borderRadius: 6, padding: '12px 16px', marginBottom: 8,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+          color: sevColors[issue.severity] || '#555',
+          background: `${sevColors[issue.severity] || '#555'}22`,
+          padding: '1px 6px', borderRadius: 3,
+        }}>{issue.severity}</span>
+        <span style={{ fontSize: 13, color: 'var(--text)' }}>{issue.description}</span>
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+        {issue.count > 0 && <span>{issue.count.toLocaleString()} wines affected</span>}
+        {issue.fix_available && !issue.fix_command && (
+          <span style={{ marginLeft: 12 }}>Fix: {issue.fix_session}</span>
+        )}
+      </div>
+
+      {/* Expandable wine list */}
+      {hasWines && (
+        <div style={{ marginTop: 8 }}>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              background: 'none', border: 'none', padding: 0,
+              color: 'var(--gold)', fontSize: 11, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >
+            <span style={{
+              display: 'inline-block', transition: 'transform 150ms',
+              transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+            }}>{'\u25B6'}</span>
+            {expanded ? 'Hide' : 'Show'} {issue.wines.length} wines
+          </button>
+          {expanded && (
+            <div style={{
+              marginTop: 6, padding: '8px 12px',
+              background: 'var(--bg)', borderRadius: 4,
+              fontSize: 12, lineHeight: 1.8,
+            }}>
+              {issue.wines.map((w, i) => (
+                <div key={i} style={{ color: 'var(--text-dim)' }}>
+                  <span style={{ fontFamily: 'monospace', color: 'var(--text-dim)', marginRight: 8 }}>
+                    fid={issue.fids?.[i]}
+                  </span>
+                  <span style={{ color: 'var(--text)' }}>{w}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Fix command */}
+      {issue.fix_command && (
+        <div style={{
+          marginTop: 8, padding: '6px 10px',
+          background: 'var(--bg)', borderRadius: 4, fontFamily: 'monospace',
+          fontSize: 11, color: 'var(--text-dim)', overflowX: 'auto',
+        }}>
+          $ {issue.fix_command}
+        </div>
+      )}
+
+      {/* Self-healing tag */}
+      {issue.self_healing && (
+        <div style={{ marginTop: 6, fontSize: 11, fontStyle: 'italic', color: 'var(--text-dim)' }}>
+          Resolves automatically after WIQS enrichment runs on these families
+        </div>
+      )}
+    </div>
+  )
+}
+
 function KnownIssues({ issues }) {
   if (!issues?.length) return null
-  const sevColors = { high: '#dc2626', medium: '#f59e0b', low: '#555' }
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -116,24 +198,7 @@ function KnownIssues({ issues }) {
         }}>{issues.length}</span>
       </div>
       {issues.map(issue => (
-        <div key={issue.id} style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 6, padding: '12px 16px', marginBottom: 8,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{
-              fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-              color: sevColors[issue.severity] || '#555',
-              background: `${sevColors[issue.severity] || '#555'}22`,
-              padding: '1px 6px', borderRadius: 3,
-            }}>{issue.severity}</span>
-            <span style={{ fontSize: 13, color: 'var(--text)' }}>{issue.description}</span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-            {issue.count > 0 && <span>Count: {issue.count.toLocaleString()} wines affected</span>}
-            {issue.fix_available && <span style={{ marginLeft: 12 }}>Fix: {issue.fix_session}</span>}
-          </div>
-        </div>
+        <KnownIssueCard key={issue.id} issue={issue} />
       ))}
     </div>
   )
