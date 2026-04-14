@@ -247,6 +247,12 @@ export const getPipelines = () => apiFetch('/ops/pipelines')
 export const getPipelineHistory = (pipelineId) =>
   apiFetch(`/ops/pipelines/${encodeURIComponent(pipelineId)}/history`)
 
+// Domain 02 — Scoring Engine
+export const getScoringEngine = () => apiFetch('/ops/scoring-engine')
+
+// Domain 03 — Catalog Intelligence
+export const getCatalogIntelligence = () => apiFetch('/ops/catalog-intelligence')
+
 // Domain 05 — Data Quality Monitor
 export const getDataQualitySummary = () => apiFetch('/ops/data-quality/summary')
 export const getDataQualityWines = (params = {}) => {

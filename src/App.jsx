@@ -15,6 +15,8 @@ import HealthDashboard from './pages/HealthDashboard'
 import OverrideQueue   from './pages/OverrideQueue'
 import TastingModel    from './pages/TastingModel'
 import LwinCoverage         from './pages/LwinCoverage'
+import ScoringEngine        from './pages/ScoringEngine'
+import CatalogIntelligence  from './pages/CatalogIntelligence'
 import PipelineOperations   from './pages/PipelineOperations'
 import DataQualityMonitor   from './pages/DataQualityMonitor'
 
@@ -92,6 +94,16 @@ export default function App() {
         <Route path="/lwin" element={
           <ProtectedRoute title="LWIN Coverage">
             <LwinCoverage />
+          </ProtectedRoute>
+        } />
+        <Route path="/catalog-intel" element={
+          <ProtectedRoute title="Catalog Intelligence">
+            <CatalogIntelligence />
+          </ProtectedRoute>
+        } />
+        <Route path="/scoring-engine" element={
+          <ProtectedRoute title="Scoring Engine">
+            <ScoringEngine />
           </ProtectedRoute>
         } />
         <Route path="/pipelines" element={
