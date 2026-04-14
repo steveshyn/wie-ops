@@ -19,6 +19,7 @@ import ScoringEngine        from './pages/ScoringEngine'
 import CatalogIntelligence  from './pages/CatalogIntelligence'
 import PipelineOperations   from './pages/PipelineOperations'
 import DataQualityMonitor   from './pages/DataQualityMonitor'
+import ApiPlatform          from './pages/ApiPlatform'
 
 function ProtectedRoute({ title, children }) {
   const { isAuthed, logout } = useAuth()
@@ -39,6 +40,11 @@ export default function App() {
         <Route path="/quality" element={
           <ProtectedRoute title="Data Quality Workbench">
             <DataQuality />
+          </ProtectedRoute>
+        } />
+        <Route path="/api-platform" element={
+          <ProtectedRoute title="API Platform">
+            <ApiPlatform />
           </ProtectedRoute>
         } />
         <Route path="/scores" element={
