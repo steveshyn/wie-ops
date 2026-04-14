@@ -20,6 +20,7 @@ import CatalogIntelligence  from './pages/CatalogIntelligence'
 import PipelineOperations   from './pages/PipelineOperations'
 import DataQualityMonitor   from './pages/DataQualityMonitor'
 import ApiPlatform          from './pages/ApiPlatform'
+import AuditTrail           from './pages/AuditTrail'
 
 function ProtectedRoute({ title, children }) {
   const { isAuthed, logout } = useAuth()
@@ -45,6 +46,11 @@ export default function App() {
         <Route path="/api-platform" element={
           <ProtectedRoute title="API Platform">
             <ApiPlatform />
+          </ProtectedRoute>
+        } />
+        <Route path="/audit-trail" element={
+          <ProtectedRoute title="Audit Trail">
+            <AuditTrail />
           </ProtectedRoute>
         } />
         <Route path="/scores" element={

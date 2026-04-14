@@ -114,6 +114,35 @@ export const getAuditLog = ({ tableName, operator, limit = 50, offset = 0, from_
 
 export const getAuditTables = () => apiFetch('/ops/audit/tables')
 
+// Domain 07 — Audit Trail (extended)
+export const getAuditTrail = (params = {}) => {
+  const sp = new URLSearchParams()
+  if (params.operator)   sp.set('operator',   params.operator)
+  if (params.table_name) sp.set('table_name', params.table_name)
+  if (params.field_name) sp.set('field_name', params.field_name)
+  if (params.record_id)  sp.set('record_id',  params.record_id)
+  if (params.session_id) sp.set('session_id', params.session_id)
+  if (params.date_from)  sp.set('date_from',  params.date_from)
+  if (params.date_to)    sp.set('date_to',    params.date_to)
+  if (params.search)     sp.set('search',     params.search)
+  sp.set('limit',  String(params.limit  ?? 100))
+  sp.set('offset', String(params.offset ?? 0))
+  return apiFetch(`/ops/audit?${sp.toString()}`)
+}
+
+export const getAuditExportUrl = (params = {}) => {
+  const sp = new URLSearchParams()
+  if (params.operator)   sp.set('operator',   params.operator)
+  if (params.table_name) sp.set('table_name', params.table_name)
+  if (params.field_name) sp.set('field_name', params.field_name)
+  if (params.record_id)  sp.set('record_id',  params.record_id)
+  if (params.session_id) sp.set('session_id', params.session_id)
+  if (params.date_from)  sp.set('date_from',  params.date_from)
+  if (params.date_to)    sp.set('date_to',    params.date_to)
+  if (params.search)     sp.set('search',     params.search)
+  return `${BASE}/ops/audit/export?${sp.toString()}`
+}
+
 // Phase 3 — Customer Layer
 export const getCustomerProfile = (customerId) =>
   apiFetch(`/recommend/profile/${encodeURIComponent(customerId)}`)
