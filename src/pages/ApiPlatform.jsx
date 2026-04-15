@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getApiPlatformSummary, getApiPlatformCoverage } from '../api/client'
+import { getApiPlatformSummary, getApiPlatformCoverage, getEndpointHealth } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 function relativeTime(iso) {
@@ -121,63 +121,118 @@ function SyncHealthCards({ sync, distributor }) {
 }
 
 const EP_STATUS = {
-  healthy:  { color: '#16a34a', label: 'Healthy' },
-  degraded: { color: '#f59e0b', label: 'Degraded' },
-  no_data:  { color: '#555',    label: 'No Data' },
+  healthy:   { color: '#16a34a', label: 'Healthy' },
+  degraded:  { color: '#f59e0b', label: 'Degraded' },
+  unhealthy: { color: '#dc2626', label: 'Unhealthy' },
+  no_data:   { color: '#555',    label: 'No Data' },
 }
 
-function EndpointHealthTable({ endpoints }) {
-  const hasData = endpoints.some(e => e.calls_24h != null)
+function EndpointHealthPanel() {
+  const [hours, setHours] = useState(24)
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    getEndpointHealth(hours)
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [hours])
+
+  const endpoints = data?.endpoints || []
+  const hasData = endpoints.length > 0
 
   return (
     <div style={{
       padding: 20, background: 'var(--bg-card)', borderRadius: 8,
       border: '1px solid var(--border)',
     }}>
-      <div style={{
-        fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
-        textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: 16,
-      }}>Endpoint Health &mdash; Last 24 Hours</div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-        <thead>
-          <tr style={{ color: 'var(--text-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-            <th style={{ padding: '8px 12px' }}>Endpoint</th>
-            <th style={{ padding: '8px 12px' }}>Calls</th>
-            <th style={{ padding: '8px 12px' }}>Avg ms</th>
-            <th style={{ padding: '8px 12px' }}>P95 ms</th>
-            <th style={{ padding: '8px 12px' }}>Errors</th>
-            <th style={{ padding: '8px 12px' }}>Last Called</th>
-            <th style={{ padding: '8px 12px' }}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {endpoints.map(ep => {
-            const s = EP_STATUS[ep.status] || EP_STATUS.no_data
-            return (
-              <tr key={ep.endpoint} style={{ borderBottom: '1px solid var(--border)' }}>
-                <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12 }}>{ep.endpoint}</td>
-                <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--text-dim)' }}>{ep.calls_24h ?? '\u2014'}</td>
-                <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--text-dim)' }}>{ep.avg_ms ?? '\u2014'}</td>
-                <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--text-dim)' }}>{ep.p95_ms ?? '\u2014'}</td>
-                <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--text-dim)' }}>{ep.errors_24h ?? '\u2014'}</td>
-                <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-dim)' }}>
-                  {ep.last_called ? relativeTime(ep.last_called) : '\u2014'}
-                </td>
-                <td style={{ padding: '8px 12px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }} />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: s.color }}>{s.label}</span>
-                  </span>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-      {!hasData && (
-        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 12, fontStyle: 'italic' }}>
-          Request logging activates after ARCH-001 audit extension ships.
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 600, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: 'var(--text-dim)',
+        }}>Endpoint Health</div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[{ h: 24, label: '24h' }, { h: 168, label: '7d' }].map(opt => (
+            <button key={opt.h} onClick={() => setHours(opt.h)} style={{
+              padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+              border: `1px solid ${hours === opt.h ? 'var(--gold)' : 'var(--border)'}`,
+              background: hours === opt.h ? 'rgba(201,168,76,0.1)' : 'transparent',
+              color: hours === opt.h ? 'var(--gold)' : 'var(--text-dim)',
+              cursor: 'pointer',
+            }}>{opt.label}</button>
+          ))}
         </div>
+      </div>
+      {loading ? (
+        <div style={{ padding: 12, color: 'var(--text-dim)', fontSize: 12 }}>Loading...</div>
+      ) : !hasData ? (
+        <div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ color: 'var(--text-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                {['Endpoint', 'Calls', 'Avg ms', 'P50 ms', 'P95 ms', 'Errors', 'Error Rate', 'Last Called', 'Status'].map(h => (
+                  <th key={h} style={{ padding: '8px 12px' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {['/api/catalog/sync', '/api/catalog/distributors', '/api/recommend', '/ops/health'].map(e => (
+                <tr key={e} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12 }}>{e}</td>
+                  {Array(7).fill(null).map((_, i) => (
+                    <td key={i} style={{ padding: '8px 12px', fontFamily: 'monospace', color: '#555' }}>{'\u2014'}</td>
+                  ))}
+                  <td style={{ padding: '8px 12px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#555' }} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>No Data</span>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 12, fontStyle: 'italic' }}>
+            Request logging is now active. Data appears after the first API calls reach production.
+          </div>
+        </div>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ color: 'var(--text-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+              {['Endpoint', 'Calls', 'Avg ms', 'P50 ms', 'P95 ms', 'Errors', 'Error Rate', 'Last Called', 'Status'].map(h => (
+                <th key={h} style={{ padding: '8px 12px' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {endpoints.map(ep => {
+              const s = EP_STATUS[ep.status] || EP_STATUS.no_data
+              return (
+                <tr key={ep.endpoint} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12 }}>{ep.endpoint}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{ep.calls?.toLocaleString() ?? '\u2014'}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--text-dim)' }}>{ep.avg_ms ?? '\u2014'}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--text-dim)' }}>{ep.p50_ms ?? '\u2014'}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--text-dim)' }}>{ep.p95_ms ?? '\u2014'}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: ep.errors > 0 ? 'var(--red)' : 'var(--text-dim)' }}>{ep.errors ?? '\u2014'}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: ep.error_rate_pct > 0 ? 'var(--amber)' : 'var(--text-dim)' }}>{ep.error_rate_pct != null ? `${ep.error_rate_pct}%` : '\u2014'}</td>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-dim)' }}>
+                    {ep.last_called ? relativeTime(ep.last_called) : '\u2014'}
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }} />
+                      <span style={{ fontSize: 12, fontWeight: 600, color: s.color }}>{s.label}</span>
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       )}
     </div>
   )
@@ -315,8 +370,8 @@ export default function ApiPlatform() {
       {/* Section 2 — Sync health */}
       <SyncHealthCards sync={summary.sync_health} distributor={summary.distributor_api} />
 
-      {/* Section 3 — Endpoint health */}
-      <EndpointHealthTable endpoints={summary.endpoint_health} />
+      {/* Section 3 — Endpoint health (live) */}
+      <EndpointHealthPanel />
 
       {/* Section 4 — Coverage table */}
       {coverage && <CatalogCoverageTable countries={coverage.by_country} />}

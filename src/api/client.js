@@ -281,6 +281,9 @@ export const getPipelineHistory = (pipelineId) =>
 export const getApiPlatformSummary = () => apiFetch('/ops/api-platform/summary')
 export const getApiPlatformCoverage = () => apiFetch('/ops/api-platform/catalog-coverage')
 
+export const getEndpointHealth = (hours = 24) =>
+  apiFetch(`/ops/api-platform/endpoint-health?hours=${hours}`)
+
 // Domain 02 — Scoring Engine
 export const getScoringEngine = () => apiFetch('/ops/scoring-engine')
 
