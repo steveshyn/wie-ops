@@ -21,6 +21,7 @@ import PipelineOperations   from './pages/PipelineOperations'
 import DataQualityMonitor   from './pages/DataQualityMonitor'
 import ApiPlatform          from './pages/ApiPlatform'
 import AuditTrail           from './pages/AuditTrail'
+import DataQueue            from './pages/DataQueue'
 
 function ProtectedRoute({ title, children }) {
   const { isAuthed, logout } = useAuth()
@@ -126,6 +127,11 @@ export default function App() {
         <Route path="/dq-monitor" element={
           <ProtectedRoute title="Data Quality Monitor">
             <DataQualityMonitor />
+          </ProtectedRoute>
+        } />
+        <Route path="/data-queue" element={
+          <ProtectedRoute title="Data Queue">
+            <DataQueue />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />

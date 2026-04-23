@@ -290,6 +290,35 @@ export const getScoringEngine = () => apiFetch('/ops/scoring-engine')
 // Domain 03 — Catalog Intelligence
 export const getCatalogIntelligence = () => apiFetch('/ops/catalog-intelligence')
 
+// W-56 — Data Queue
+export const getCandidateQueueSummary = () =>
+  apiFetch('/admin/candidates/queue-summary')
+
+export const getCandidateReviewQueue = (params = {}) => {
+  const sp = new URLSearchParams()
+  if (params.country)    sp.set('country',    params.country)
+  if (params.confidence) sp.set('confidence', params.confidence)
+  if (params.reason)     sp.set('reason',     params.reason)
+  sp.set('limit',  String(params.limit  ?? 50))
+  sp.set('offset', String(params.offset ?? 0))
+  return apiFetch(`/admin/candidates/review-queue?${sp.toString()}`)
+}
+
+export const getCandidateDetail = (id) =>
+  apiFetch(`/admin/candidates/${id}`)
+
+export const submitCandidateDecision = (id, decision, note, operator = 'steve') =>
+  apiFetch(`/admin/candidates/${id}/decision`, {
+    method: 'POST',
+    body: JSON.stringify({ decision, note, operator }),
+  })
+
+export const submitBatchDecision = (ids, decision, note, operator = 'steve') =>
+  apiFetch('/admin/candidates/batch-decision', {
+    method: 'POST',
+    body: JSON.stringify({ ids, decision, note, operator }),
+  })
+
 // Domain 05 — Data Quality Monitor
 export const getDataQualitySummary = () => apiFetch('/ops/data-quality/summary')
 export const getDataQualityWines = (params = {}) => {
