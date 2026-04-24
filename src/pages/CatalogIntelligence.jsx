@@ -40,8 +40,16 @@ function StatChip({ label, value }) {
   )
 }
 
+function bandRank(band) {
+  if (typeof band !== 'string') return -Infinity
+  if (band.toLowerCase().startsWith('below')) return -1
+  const n = parseInt(band, 10)
+  return Number.isNaN(n) ? -Infinity : n
+}
+
 function ScoreDistribution({ distribution }) {
-  const maxCount = Math.max(...distribution.map(d => d.count), 1)
+  const sorted = [...distribution].sort((a, b) => bandRank(b.band) - bandRank(a.band))
+  const maxCount = Math.max(...sorted.map(d => d.count), 1)
 
   return (
     <div style={{
@@ -52,7 +60,7 @@ function ScoreDistribution({ distribution }) {
         Score Distribution
       </h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {distribution.map(d => (
+        {sorted.map(d => (
           <div key={d.band} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 60, fontSize: 12, fontFamily: 'monospace', color: 'var(--text-dim)', textAlign: 'right' }}>
               {d.band}
