@@ -319,6 +319,16 @@ export const submitBatchDecision = (ids, decision, note, operator = 'steve') =>
     body: JSON.stringify({ ids, decision, note, operator }),
   })
 
+// W-58 — Promotion engine
+export const triggerPromotion = (opts = {}) =>
+  apiFetch('/admin/candidates/promote', {
+    method: 'POST',
+    body: JSON.stringify({
+      no_palate_sync: opts.noPalateSync ?? false,
+      limit: opts.limit ?? 500,
+    }),
+  })
+
 // Domain 05 — Data Quality Monitor
 export const getDataQualitySummary = () => apiFetch('/ops/data-quality/summary')
 export const getDataQualityWines = (params = {}) => {
