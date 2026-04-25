@@ -5,6 +5,7 @@ import {
   getCandidateReviewQueue,
   submitBatchDecision,
   submitCandidateDecision,
+  triggerPromotion,
 } from '../api/client'
 import LoadingSpinner from '../components/LoadingSpinner'
 import EmptyState from '../components/EmptyState'
@@ -124,6 +125,10 @@ export default function DataQueue() {
   const [batchDecision, setBatchDecision] = useState(null)  // 'approve'|'reject'|'defer'|null
   const [batchNote, setBatchNote] = useState('')
   const [batchSubmitting, setBatchSubmitting] = useState(false)
+
+  // W-58 — Promote Now (synchronous endpoint, ~30-60s)
+  const [promoting, setPromoting] = useState(false)
+  const [promoteResult, setPromoteResult] = useState(null)  // {status, message} | null
 
   // ── Debounce filters ────────────────────────────────────────────────────
   useEffect(() => {
@@ -260,6 +265,23 @@ export default function DataQueue() {
   }
   const cancelBatch = () => { setBatchDecision(null); setBatchNote('') }
 
+  const handlePromoteNow = async () => {
+    if (promoting) return
+    if (!confirm(`Promote ${summary?.counts?.ready_to_promote ?? 0} ready_to_promote candidates now? Synchronous run, ~30–60s.`)) return
+    setPromoting(true)
+    setPromoteResult(null)
+    try {
+      const resp = await triggerPromotion()
+      setPromoteResult({ status: 'ok', message: 'Promotion complete. Refreshing summary…' })
+      refresh()
+      setTimeout(() => setPromoteResult(null), 4000)
+    } catch (err) {
+      setPromoteResult({ status: 'err', message: err.message || 'Promotion failed' })
+    } finally {
+      setPromoting(false)
+    }
+  }
+
   const submitBatch = async () => {
     if (!batchDecision || !batchNote.trim() || selected.size === 0) return
     setBatchSubmitting(true)
@@ -308,10 +330,36 @@ export default function DataQueue() {
           <StatChip label="rejected" value={summary?.counts?.rejected} tone="dim" />
           <StatChip label="total" value={summary?.counts?.total} tone="dim" />
           <div style={{ flex: 1 }} />
+          {(summary?.counts?.ready_to_promote ?? 0) > 0 && (
+            <button
+              onClick={handlePromoteNow}
+              disabled={promoting}
+              style={{
+                ...btnBase,
+                border: '1px solid var(--gold)',
+                color: 'var(--gold)',
+                opacity: promoting ? 0.6 : 1,
+              }}
+              title="Run promote_candidates.py --execute now (synchronous, ~30-60s)"
+            >
+              {promoting ? 'Promoting…' : `Promote Now (${summary.counts.ready_to_promote})`}
+            </button>
+          )}
           <button onClick={refresh} style={{ ...btnBase, border: '1px solid var(--border)', color: 'var(--text-dim)' }}>
             Refresh
           </button>
         </div>
+        {promoteResult && (
+          <div style={{
+            marginTop: 8, fontSize: 11,
+            padding: '6px 10px', borderRadius: 4,
+            background: promoteResult.status === 'ok' ? 'rgba(125,211,252,0.10)' : 'rgba(220,38,38,0.10)',
+            color:      promoteResult.status === 'ok' ? '#7dd3fc' : 'var(--red)',
+            border:     promoteResult.status === 'ok' ? '1px solid #7dd3fc' : '1px solid var(--red)',
+          }}>
+            {promoteResult.message}
+          </div>
+        )}
         <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 10, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           <span>
             <strong>Last classified:</strong>{' '}
