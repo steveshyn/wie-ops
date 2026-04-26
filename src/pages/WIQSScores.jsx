@@ -237,13 +237,6 @@ export default function WIQSScores() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}>
-      <style>{`
-        @keyframes shimmer {
-          0%   { background-position: -400px 0 }
-          100% { background-position:  400px 0 }
-        }
-      `}</style>
-
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <h1 style={{

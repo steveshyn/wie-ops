@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
 } from 'recharts'
-import { getHealth, getOpsHealth, getCatalogStats, getQualityIssues } from '../api/client'
+import {
+  getHealth, getOpsHealth, getCatalogStats, getQualityIssues,
+  cachedFetch, invalidateAll,
+} from '../api/client'
 import StatCard      from '../components/StatCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { TIER_COLORS, scoreToColor } from '../utils/tierColors'
@@ -12,6 +15,87 @@ import AskWine from '../components/AskWine'
 import HelpTip from '../components/HelpTip'
 
 const TIER_ORDER = ['exceptional', 'distinguished', 'quality', 'standard', 'basic']
+
+function SkeletonBlock({ width = '100%', height = 14, style }) {
+  return (
+    <div aria-hidden="true" style={{
+      width, height, borderRadius: 4,
+      background: 'linear-gradient(90deg,#222 25%,#2a2a2a 50%,#222 75%)',
+      backgroundSize: '400px 100%',
+      animation: 'shimmer 1.4s infinite',
+      ...style,
+    }} />
+  )
+}
+
+function SystemHealthSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{
+        background: 'var(--bg-card)', border: '1px solid var(--border)',
+        borderRadius: 8, padding: '20px 28px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <SkeletonBlock width={12} height={12} style={{ borderRadius: '50%' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <SkeletonBlock width={120} height={14} />
+            <SkeletonBlock width={60}  height={10} />
+          </div>
+        </div>
+        <SkeletonBlock width={180} height={12} />
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+        gap: 16,
+      }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} style={{
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderRadius: 8, padding: 20,
+            display: 'flex', flexDirection: 'column', gap: 12,
+          }}>
+            <SkeletonBlock width="60%" height={11} />
+            <SkeletonBlock width="40%" height={22} />
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 8, padding: '20px 24px', height: 320,
+          display: 'flex', flexDirection: 'column', gap: 18,
+        }}>
+          <SkeletonBlock width={180} height={11} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, justifyContent: 'center' }}>
+            {[80, 65, 50, 35, 20].map((w, i) => (
+              <SkeletonBlock key={i} width={`${w}%`} height={18} />
+            ))}
+          </div>
+        </div>
+        <div style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 8, padding: '20px 24px', height: 320,
+          display: 'flex', flexDirection: 'column', gap: 18,
+        }}>
+          <SkeletonBlock width={160} height={11} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <SkeletonBlock width={120} height={13} />
+                <SkeletonBlock width={40}  height={16} />
+              </div>
+            ))}
+          </div>
+          <SkeletonBlock width="100%" height={36} />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function SystemHealth() {
   const navigate = useNavigate()
@@ -25,9 +109,41 @@ export default function SystemHealth() {
   const [apiOnline,  setApiOnline]  = useState(null)
   const [lastRefresh, setLastRefresh] = useState(null)
 
-  const fetchAll = useCallback(async () => {
+  const applyResults = useCallback((h, s, q, oh, elapsed) => {
+    setApiMs(elapsed)
+    setApiOnline(true)
+    setHealth(h)
+    setStats(s)
+    setIssues(q)
+    setOpsHealth(oh)
+  }, [])
+
+  // Initial mount + manual refresh: use cache so navigation-revisit within
+  // CACHE_TTL_MS returns instantly.
+  const fetchInitial = useCallback(async () => {
     setLoading(true)
     setError(null)
+    const t0 = Date.now()
+    try {
+      const [h, s, q, oh] = await Promise.all([
+        cachedFetch('sh_health',  getHealth),
+        cachedFetch('sh_catalog', getCatalogStats),
+        cachedFetch('sh_quality', () =>
+          getQualityIssues().catch(() => ({ p1_misses: [], low_confidence: [], tier_anomalies: [] }))),
+        cachedFetch('sh_ops',     () => getOpsHealth().catch(() => null)),
+      ])
+      applyResults(h, s, q, oh, Date.now() - t0)
+    } catch (err) {
+      setApiOnline(false)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+      setLastRefresh(new Date())
+    }
+  }, [applyResults])
+
+  // Polling tick: bypass cache so the page actually refreshes.
+  const fetchPoll = useCallback(async () => {
     const t0 = Date.now()
     try {
       const [h, s, q, oh] = await Promise.all([
@@ -36,26 +152,26 @@ export default function SystemHealth() {
         getQualityIssues().catch(() => ({ p1_misses: [], low_confidence: [], tier_anomalies: [] })),
         getOpsHealth().catch(() => null),
       ])
-      setApiMs(Date.now() - t0)
-      setApiOnline(true)
-      setHealth(h)
-      setStats(s)
-      setIssues(q)
-      setOpsHealth(oh)
+      applyResults(h, s, q, oh, Date.now() - t0)
+      setError(null)
     } catch (err) {
       setApiOnline(false)
       setError(err.message)
     } finally {
-      setLoading(false)
       setLastRefresh(new Date())
     }
-  }, [])
+  }, [applyResults])
+
+  const handleRefresh = useCallback(() => {
+    invalidateAll()
+    fetchInitial()
+  }, [fetchInitial])
 
   useEffect(() => {
-    fetchAll()
-    const id = setInterval(fetchAll, 60000)
+    fetchInitial()
+    const id = setInterval(fetchPoll, 60000)
     return () => clearInterval(id)
-  }, [fetchAll])
+  }, [fetchInitial, fetchPoll])
 
   const refreshStr = lastRefresh
     ? lastRefresh.toLocaleTimeString('en-US', { hour12: false })
@@ -100,6 +216,12 @@ export default function SystemHealth() {
     )
   }
 
+  // First-load skeleton: no stats yet AND we're loading. On revisit-with-cache
+  // the cachedFetch resolves in a microtask so this branch is invisible.
+  if (loading && !stats && !error) {
+    return <SystemHealthSkeleton />
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
@@ -136,17 +258,37 @@ export default function SystemHealth() {
           </div>
         </div>
 
-        <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'right' }}>
-          {apiMs != null && <span>Response: {apiMs}ms · </span>}
-          Last checked: {refreshStr}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'right' }}>
+            {apiMs != null && <span>Response: {apiMs}ms · </span>}
+            Last checked: {refreshStr}
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            title="Clear cache and refetch"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              color: loading ? 'var(--text-dim)' : 'var(--text)',
+              padding: '6px 12px', borderRadius: 4,
+              fontSize: 12, cursor: loading ? 'default' : 'pointer',
+              transition: 'border-color 150ms, background 150ms',
+            }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.borderColor = 'var(--gold-dim)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+          >
+            {loading ? 'Refreshing…' : 'Refresh'}
+          </button>
         </div>
       </div>
 
-      {/* Loading overlay */}
-      {loading && !stats && (
+      {/* Loading state — show inline spinner only when refreshing existing data;
+          first-load skeleton is rendered below in place of the empty content. */}
+      {loading && stats && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-dim)', padding: '16px 0' }}>
           <LoadingSpinner size="sm" />
-          Loading catalog stats…
+          Refreshing…
         </div>
       )}
 

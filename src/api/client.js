@@ -1,5 +1,22 @@
 const BASE = import.meta.env.VITE_API_BASE_URL
 
+// In-memory navigation-revisit cache.
+// Polling paths must call the underlying fetch directly to keep data live;
+// only initial mounts and user-triggered loads should go through cachedFetch.
+const _cache = new Map()
+const CACHE_TTL_MS = 60_000
+
+export async function cachedFetch(key, fetchFn) {
+  const hit = _cache.get(key)
+  if (hit && hit.expires > Date.now()) return hit.data
+  const data = await fetchFn()
+  _cache.set(key, { data, expires: Date.now() + CACHE_TTL_MS })
+  return data
+}
+
+export function invalidateCache(key) { _cache.delete(key) }
+export function invalidateAll() { _cache.clear() }
+
 function getAuthHeaders() {
   // Replace this function only to change auth strategy
   // (JWT, OAuth2, network-level, etc) — no other changes needed
